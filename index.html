@@ -48,14 +48,15 @@
             font-size: 14px;
             z-index: 100;
         }
-        .controls {
-            position: fixed;
-            top: 20px;
-            right: 20px;
+        .left-sidebar {
+            width: 200px;
             background: white;
-            padding: 15px;
+            border: 2px solid #333;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px;
+        }
+        .controls {
+            width: 100%;
         }
         button {
             margin: 5px;
@@ -72,19 +73,31 @@
     </style>
 </head>
 <body>
-    <div class="controls">
-        <div style="margin-bottom: 10px;">
-            <button onclick="app.toggleMode()" id="mode-btn">添加模式</button>
-            <button onclick="app.clearWorkspace()">清空</button>
-        </div>
-        <div style="font-size: 12px; color: #666;">
-            <div>左键: 添加/删除方块</div>
-            <div>拖拽: 旋转视角</div>
-            <div>滚轮: 缩放</div>
-        </div>
-    </div>
+
     
     <div class="container">
+        <div class="left-sidebar">
+            <div class="controls">
+                <div style="margin-bottom: 10px;">
+                    <button onclick="app.toggleMode()" id="mode-btn">添加模式</button>
+                    <button onclick="app.clearWorkspace()">清空</button>
+                </div>
+                <div style="margin-bottom: 10px; border-top: 1px solid #ddd; padding-top: 10px;">
+                    <div style="font-size: 12px; margin-bottom: 5px; color: #666;">视角切换:</div>
+                    <button onclick="app.setViewDirection('top')">顶视图</button>
+                    <button onclick="app.setViewDirection('bottom')">底视图</button>
+                    <button onclick="app.setViewDirection('front')">前视图</button>
+                    <button onclick="app.setViewDirection('back')">后视图</button>
+                    <button onclick="app.setViewDirection('left')">左视图</button>
+                    <button onclick="app.setViewDirection('right')">右视图</button>
+                </div>
+                <div style="font-size: 12px; color: #666;">
+                    <div>左键: 添加/删除方块</div>
+                    <div>拖拽: 旋转视角</div>
+                    <div>滚轮: 缩放</div>
+                </div>
+            </div>
+        </div>
         <div class="main-view" id="perspective-view">
             <div class="view-label">透视图 - 拖拽旋转视角</div>
         </div>

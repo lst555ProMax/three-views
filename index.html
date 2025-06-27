@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>立体图形三视图</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+        }
+        .container {
+            display: flex;
+            gap: 15px;
+            height: 90vh;
+        }
+        .main-view {
+            flex: 1;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 8px;
+            position: relative;
+            min-width: 60%;
+        }
+        .side-views {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .view {
+            background: white;
+            border: 2px solid #333;
+            border-radius: 8px;
+            position: relative;
+            flex: 1;
+        }
+        .view-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            z-index: 100;
+        }
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            margin: 5px;
+            padding: 8px 15px;
+            border: none;
+            background: #007cba;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #005a87;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <div style="margin-bottom: 10px;">
+            <button onclick="app.toggleMode()" id="mode-btn">添加模式</button>
+            <button onclick="app.clearWorkspace()">清空</button>
+        </div>
+        <div style="font-size: 12px; color: #666;">
+            <div>左键: 添加/删除方块</div>
+            <div>拖拽: 旋转视角</div>
+            <div>滚轮: 缩放</div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="main-view" id="perspective-view">
+            <div class="view-label">透视图 - 拖拽旋转视角</div>
+        </div>
+        <div class="side-views">
+            <div class="view" id="front-view">
+                <div class="view-label">正视图</div>
+            </div>
+            <div class="view" id="side-view">
+                <div class="view-label">侧视图</div>
+            </div>
+            <div class="view" id="top-view">
+                <div class="view-label">俯视图</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -186,7 +186,8 @@ class ThreeViewsApp {
         const planeMaterial = new THREE.MeshBasicMaterial({ 
             transparent: true, 
             opacity: 0,
-            visible: false  // 不可见但可以被射线检测
+            visible: false,  // 不可见但可以被射线检测
+            side: THREE.DoubleSide  // 双面渲染，从任何方向都能检测到
         });
         
         const plane = new THREE.Mesh(planeGeometry, planeMaterial);
@@ -442,7 +443,11 @@ class ThreeViewsApp {
                         Math.abs(intersectPoint.y - blockPos.y) <= tolerance &&
                         Math.abs(intersectPoint.z - blockPos.z) <= tolerance) {
                         const gridPos = block.userData.gridPos;
-                        this.removeBlock(gridPos.x, gridPos.y, gridPos.z);
+                        
+                        // 检查是否为该XZ位置的最顶层方块
+                        if (this.isTopBlock(gridPos.x, gridPos.y, gridPos.z)) {
+                            this.removeTopBlock(gridPos.x, gridPos.z);
+                        }
                         return;
                     }
                 }
@@ -587,7 +592,50 @@ class ThreeViewsApp {
     }
     
     /**
-     * 删除指定位置的方块
+     * 检查是否为指定XZ位置的最顶层方块
+     */
+    isTopBlock(x, y, z) {
+        // 检查该方块上方是否没有其他方块
+        for (let checkY = y + 1; checkY < 5; checkY++) {
+            if (this.workspace[x][checkY][z]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * 删除指定XZ位置上最顶层的方块
+     */
+    removeTopBlock(x, z) {
+        // 找到该XZ位置上最高的方块
+        let topY = -1;
+        for (let y = 4; y >= 0; y--) {
+            if (this.workspace[x][y][z]) {
+                topY = y;
+                break;
+            }
+        }
+        
+        if (topY >= 0) {
+            this.saveState();
+            this.workspace[x][topY][z] = false;
+            const blockToRemove = this.blocks.children.find(child => 
+                child.userData.gridPos && 
+                child.userData.gridPos.x === x &&
+                child.userData.gridPos.y === topY &&
+                child.userData.gridPos.z === z
+            );
+            
+            if (blockToRemove) {
+                this.blocks.remove(blockToRemove);
+                this.updateAllScenes();
+            }
+        }
+    }
+    
+    /**
+     * 删除指定位置的方块（保留用于内部调用）
      */
     removeBlock(x, y, z) {
         this.saveState();
@@ -632,31 +680,59 @@ class ThreeViewsApp {
     setViewDirection(direction) {
         const camera = this.cameras.perspective;
         
-        // 预设的相机位置
+        // 标准视图 + 8个角视图位置
         const positions = {
+            // 6个标准视图
             top: [0, 10, 0],
             bottom: [0, -10, 0],
             front: [0, 0, 10],
             back: [0, 0, -10],
             left: [-10, 0, 0],
-            right: [10, 0, 0]
+            right: [10, 0, 0],
+            // 8个角视图（正方体的8个角）
+            corner1: [8, 8, 8],     // 右上前
+            corner2: [-8, 8, 8],    // 左上前
+            corner3: [8, -8, 8],    // 右下前
+            corner4: [-8, -8, 8],   // 左下前
+            corner5: [8, 8, -8],    // 右上后
+            corner6: [-8, 8, -8],   // 左上后
+            corner7: [8, -8, -8],   // 右下后
+            corner8: [-8, -8, -8]   // 左下后
         };
         
-        // 预设的相机上方向
+        // 对应的上方向配置
         const upVectors = {
+            // 6个标准视图
             top: [0, 0, -1],
             bottom: [0, 0, 1],
             front: [0, 1, 0],
             back: [0, 1, 0],
             left: [0, 1, 0],
-            right: [0, 1, 0]
+            right: [0, 1, 0],
+            // 8个角视图都使用标准上方向
+            corner1: [0, 1, 0],
+            corner2: [0, 1, 0],
+            corner3: [0, 1, 0],
+            corner4: [0, 1, 0],
+            corner5: [0, 1, 0],
+            corner6: [0, 1, 0],
+            corner7: [0, 1, 0],
+            corner8: [0, 1, 0]
         };
         
-        // 动画参数
-        const startPos = camera.position.clone();
-        const startUp = camera.up.clone();
-        const endPos = new THREE.Vector3(...positions[direction]);
-        const endUp = new THREE.Vector3(...upVectors[direction]);
+        // 创建临时相机用于计算四元数
+        const startCamera = camera.clone();
+        const endCamera = camera.clone();
+        endCamera.position.set(...positions[direction]);
+        endCamera.up.set(...upVectors[direction]);
+        endCamera.lookAt(0, 0, 0);
+        
+        // 获取起始和结束的四元数
+        const startQuaternion = startCamera.quaternion.clone();
+        const endQuaternion = endCamera.quaternion.clone();
+        const startPosition = startCamera.position.clone();
+        const endPosition = endCamera.position.clone();
+        
         const duration = 1000;
         const startTime = Date.now();
         
@@ -667,13 +743,11 @@ class ThreeViewsApp {
             const easeProgress = 1 - Math.pow(1 - progress, 3); // 缓动函数
             
             if (progress >= 1) {
-                camera.position.copy(endPos);
-                camera.up.copy(endUp);
-                camera.lookAt(0, 0, 0);
+                camera.position.copy(endPosition);
+                camera.quaternion.copy(endQuaternion);
             } else {
-                camera.position.lerpVectors(startPos, endPos, easeProgress);
-                camera.up.lerpVectors(startUp, endUp, easeProgress);
-                camera.lookAt(0, 0, 0);
+                camera.position.lerpVectors(startPosition, endPosition, easeProgress);
+                camera.quaternion.slerpQuaternions(startQuaternion, endQuaternion, easeProgress);
                 requestAnimationFrame(animateCamera);
             }
         };

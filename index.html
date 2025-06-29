@@ -60,12 +60,13 @@
         }
         button {
             margin: 5px;
-            padding: 8px 15px;
+            padding: 6px 8px;
             border: none;
             background: #007cba;
             color: white;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 12px;
         }
         button:hover {
             background: #005a87;
@@ -79,17 +80,29 @@
         <div class="left-sidebar">
             <div class="controls">
                 <div style="margin-bottom: 10px;">
-                    <button onclick="app.toggleMode()" id="mode-btn">添加模式</button>
-                    <button onclick="app.clearWorkspace()">清空</button>
+                    <button onclick="app.clearWorkspace()" style="padding: 8px 15px; font-size: 14px;">清空</button>
                 </div>
                 <div style="margin-bottom: 10px; border-top: 1px solid #ddd; padding-top: 10px;">
-                    <div style="font-size: 12px; margin-bottom: 5px; color: #666;">视角切换:</div>
-                    <button onclick="app.setViewDirection('top')">顶视图</button>
-                    <button onclick="app.setViewDirection('bottom')">底视图</button>
-                    <button onclick="app.setViewDirection('front')">前视图</button>
-                    <button onclick="app.setViewDirection('back')">后视图</button>
-                    <button onclick="app.setViewDirection('left')">左视图</button>
-                    <button onclick="app.setViewDirection('right')">右视图</button>
+                    <div style="font-size: 12px; margin-bottom: 5px; color: #666;">标准视图:</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px; margin-bottom: 8px;">
+                        <button onclick="app.setViewDirection('top')">顶视图</button>
+                        <button onclick="app.setViewDirection('bottom')">底视图</button>
+                        <button onclick="app.setViewDirection('front')">前视图</button>
+                        <button onclick="app.setViewDirection('back')">后视图</button>
+                        <button onclick="app.setViewDirection('left')">左视图</button>
+                        <button onclick="app.setViewDirection('right')">右视图</button>
+                    </div>
+                    <div style="font-size: 12px; margin-bottom: 5px; color: #666;">角视图:</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px;">
+                        <button onclick="app.setViewDirection('corner1')">右上前</button>
+                        <button onclick="app.setViewDirection('corner2')">左上前</button>
+                        <button onclick="app.setViewDirection('corner3')">右下前</button>
+                        <button onclick="app.setViewDirection('corner4')">左下前</button>
+                        <button onclick="app.setViewDirection('corner5')">右上后</button>
+                        <button onclick="app.setViewDirection('corner6')">左上后</button>
+                        <button onclick="app.setViewDirection('corner7')">右下后</button>
+                        <button onclick="app.setViewDirection('corner8')">左下后</button>
+                    </div>
                 </div>
                 <div style="font-size: 12px; color: #666;">
                     <div>左键: 添加/删除方块</div>

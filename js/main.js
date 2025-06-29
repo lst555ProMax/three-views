@@ -1,23 +1,45 @@
+/**
+ * 三视图应用主类
+ * 实现3D方块编辑器，支持透视图、前视图、侧视图、顶视图四个视角
+ */
 class ThreeViewsApp {
     constructor() {
+        // 存储四个视图的场景、相机、渲染器 
         this.scenes = {};
         this.cameras = {};
         this.renderers = {};
+        
+        // 射线投射器，用于鼠标点击检测
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
+        
+        // 5x5x5的工作空间，存储方块状态
         this.workspace = new Array(5).fill().map(() => new Array(5).fill().map(() => new Array(5).fill(false)));
+        
+        // 方块组，存储所有3D方块
         this.blocks = new THREE.Group();
-        this.isAddMode = true;
+        
+        // 撤回/重做系统
+        this.undoStack = [];  // 撤回栈
+        this.redoStack = [];  // 重做栈
+        this.maxHistorySize = 50;  // 最大历史记录数
+        
         this.init();
     }
 
+    /**
+     * 初始化应用
+     */
     init() {
-        this.setupViews();
-        this.setupWorkspace();
-        this.setupControls();
-        this.animate();
+        this.setupViews();      // 设置四个视图
+        this.setupWorkspace();  // 设置工作空间
+        this.setupControls();   // 设置交互控制
+        this.animate();         // 开始渲染循环
     }
 
+    /**
+     * 设置四个视图：透视图、前视图、侧视图、顶视图
+     */
     setupViews() {
         const views = ['perspective', 'front', 'side', 'top'];
         
@@ -26,9 +48,11 @@ class ThreeViewsApp {
             const width = container.clientWidth;
             const height = container.clientHeight;
 
+            // 创建场景并设置背景色
             this.scenes[viewName] = new THREE.Scene();
             this.scenes[viewName].background = new THREE.Color(0xf8f8f8);
 
+            // 透视图使用透视相机，其他视图使用正交相机
             if (viewName === 'perspective') {
                 this.cameras[viewName] = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
                 this.cameras[viewName].position.set(8, 8, 8);
@@ -38,28 +62,37 @@ class ThreeViewsApp {
             }
             this.cameras[viewName].lookAt(0, 0, 0);
 
+            // 创建渲染器并添加到DOM
             this.renderers[viewName] = new THREE.WebGLRenderer({ antialias: true });
             this.renderers[viewName].setSize(width, height);
             container.appendChild(this.renderers[viewName].domElement);
 
-            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            // 添加光照
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);  // 环境光
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);  // 方向光
             directionalLight.position.set(10, 10, 5);
             this.scenes[viewName].add(ambientLight, directionalLight);
         });
 
+        // 监听窗口大小变化
         window.addEventListener('resize', () => this.onWindowResize());
     }
 
+    /**
+     * 设置正交视图相机位置
+     */
     setCameraPosition(viewName) {
         const positions = {
-            front: [0, 0, 8],
-            side: [8, 0, 0],
-            top: [0, 8, 0]
+            front: [0, 0, 8],   // 前视图：从Z轴正方向看
+            side: [8, 0, 0],    // 侧视图：从X轴正方向看
+            top: [0, 8, 0]      // 顶视图：从Y轴正方向看
         };
         this.cameras[viewName].position.set(...positions[viewName]);
     }
 
+    /**
+     * 设置工作空间，包括网格线、占位符和坐标轴
+     */
     setupWorkspace() {
         // 创建3D网格线
         this.createGridLines();
@@ -70,16 +103,21 @@ class ThreeViewsApp {
         // 创建坐标轴指示器
         this.createAxisHelper();
         
+        // 将网格线、占位符、方块组添加到所有场景
         Object.keys(this.scenes).forEach(viewName => {
             this.scenes[viewName].add(this.gridLines.clone());
             this.scenes[viewName].add(this.placeholders.clone());
             this.scenes[viewName].add(this.blocks.clone());
+            // 只在透视图中显示坐标轴
             if (viewName === 'perspective') {
                 this.scenes[viewName].add(this.axisHelper.clone());
             }
         });
     }
     
+    /**
+     * 创建3D网格线，显示5x5x5工作空间的边界
+     */
     createGridLines() {
         this.gridLines = new THREE.Group();
         const lineMaterial = new THREE.LineBasicMaterial({ 
@@ -137,25 +175,31 @@ class ThreeViewsApp {
         }
     }
     
+    /**
+     * 创建透明占位符，用于鼠标点击检测
+     */
     createPlaceholders() {
         this.placeholders = new THREE.Group();
         
-        // 创建一个大的底部平面用于检测
+        // 创建一个大的底部平面用于检测底面点击
         const planeGeometry = new THREE.PlaneGeometry(5, 5);
         const planeMaterial = new THREE.MeshBasicMaterial({ 
             transparent: true, 
             opacity: 0,
-            visible: false
+            visible: false  // 不可见但可以被射线检测
         });
         
         const plane = new THREE.Mesh(planeGeometry, planeMaterial);
         plane.rotation.x = -Math.PI / 2; // 旋转使其水平
-        plane.position.set(0, -2, 0); // 放在底部
+        plane.position.set(0, -2.5, 0); // 放在底部网格线位置
         plane.userData = { isGroundPlane: true };
         
         this.placeholders.add(plane);
     }
     
+    /**
+     * 创建坐标轴指示器，显示X(红)、Y(绿)、Z(蓝)轴
+     */
     createAxisHelper() {
         this.axisHelper = new THREE.Group();
         
@@ -208,52 +252,33 @@ class ThreeViewsApp {
     }
     
     createAxisLabels() {
-        // X轴标签
-        const xCanvas = document.createElement('canvas');
-        const xContext = xCanvas.getContext('2d');
-        xCanvas.width = 64;
-        xCanvas.height = 64;
-        xContext.font = '48px Arial';
-        xContext.fillStyle = '#ff0000';
-        xContext.textAlign = 'center';
-        xContext.fillText('X', 32, 40);
-        const xTexture = new THREE.CanvasTexture(xCanvas);
-        const xSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: xTexture }));
-        xSprite.position.set(3.2, -2.5, -2.5);
-        xSprite.scale.set(0.5, 0.5, 1);
-        this.axisHelper.add(xSprite);
+        const labels = [
+            { text: 'X', color: '#ff0000', position: [3.2, -2.5, -2.5] },
+            { text: 'Y', color: '#00ff00', position: [-2.5, 3.2, -2.5] },
+            { text: 'Z', color: '#0000ff', position: [-2.5, -2.5, 3.2] }
+        ];
         
-        // Y轴标签
-        const yCanvas = document.createElement('canvas');
-        const yContext = yCanvas.getContext('2d');
-        yCanvas.width = 64;
-        yCanvas.height = 64;
-        yContext.font = '48px Arial';
-        yContext.fillStyle = '#00ff00';
-        yContext.textAlign = 'center';
-        yContext.fillText('Y', 32, 40);
-        const yTexture = new THREE.CanvasTexture(yCanvas);
-        const ySprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: yTexture }));
-        ySprite.position.set(-2.5, 3.2, -2.5);
-        ySprite.scale.set(0.5, 0.5, 1);
-        this.axisHelper.add(ySprite);
-        
-        // Z轴标签
-        const zCanvas = document.createElement('canvas');
-        const zContext = zCanvas.getContext('2d');
-        zCanvas.width = 64;
-        zCanvas.height = 64;
-        zContext.font = '48px Arial';
-        zContext.fillStyle = '#0000ff';
-        zContext.textAlign = 'center';
-        zContext.fillText('Z', 32, 40);
-        const zTexture = new THREE.CanvasTexture(zCanvas);
-        const zSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: zTexture }));
-        zSprite.position.set(-2.5, -2.5, 3.2);
-        zSprite.scale.set(0.5, 0.5, 1);
-        this.axisHelper.add(zSprite);
+        labels.forEach(({ text, color, position }) => {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 64;
+            canvas.height = 64;
+            context.font = '48px Arial';
+            context.fillStyle = color;
+            context.textAlign = 'center';
+            context.fillText(text, 32, 40);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture }));
+            sprite.position.set(...position);
+            sprite.scale.set(0.5, 0.5, 1);
+            this.axisHelper.add(sprite);
+        });
     }
 
+    /**
+     * 设置鼠标交互控制
+     */
     setupControls() {
         const canvas = this.renderers.perspective.domElement;
         
@@ -272,7 +297,7 @@ class ThreeViewsApp {
             }
         });
         
-        // 拖拽旋转控制
+        // 拖拽旋转控制相关变量
         this.isDragging = false;
         this.previousMousePosition = { x: 0, y: 0 };
         
@@ -309,17 +334,35 @@ class ThreeViewsApp {
             this.zoomCamera(event.deltaY * 0.001);
         });
         
-
+        // 键盘快捷键
+        document.addEventListener('keydown', (event) => {
+            if (event.ctrlKey && event.key === 'z' && !event.shiftKey) {
+                event.preventDefault();
+                this.undo();
+            } else if ((event.ctrlKey && event.shiftKey && event.key === 'Z') || 
+                       (event.ctrlKey && event.key === 'y')) {
+                event.preventDefault();
+                this.redo();
+            }
+        });
     }
 
-    onMouseClick(event) {
-        if (this.isDragging) return;
-        
+    /**
+     * 将鼠标坐标转换为标准化设备坐标并设置射线投射器
+     */
+    setupRaycaster(event) {
         const rect = this.renderers.perspective.domElement.getBoundingClientRect();
         this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
         this.raycaster.setFromCamera(this.mouse, this.cameras.perspective);
+    }
+
+    /**
+     * 处理鼠标左键点击事件，用于添加方块
+     */
+    onMouseClick(event) {
+        if (this.isDragging) return;
+        this.setupRaycaster(event);
         
         // 先检测现有方块
         const blockGroup = this.scenes.perspective.children.find(child => 
@@ -359,8 +402,11 @@ class ThreeViewsApp {
         
         if (planeIntersects.length > 0) {
             const intersectPoint = planeIntersects[0].point;
-            const gridX = Math.floor(intersectPoint.x + 2.5);
-            const gridZ = Math.floor(intersectPoint.z + 2.5);
+            const gridX = Math.round(intersectPoint.x + 2);
+            const gridZ = Math.round(intersectPoint.z + 2);
+            
+            console.log('intersectPoint.x:', intersectPoint.x, 'intersectPoint.z:', intersectPoint.z);
+            console.log('gridX:', gridX, 'gridZ:', gridZ);
             
             if (gridX >= 0 && gridX < 5 && gridZ >= 0 && gridZ < 5) {
                 this.addBlockAtXZ(gridX, gridZ);
@@ -368,14 +414,12 @@ class ThreeViewsApp {
         }
     }
     
+    /**
+     * 处理鼠标右键点击事件，用于删除方块
+     */
     onRightClick(event) {
         if (this.isDragging) return;
-        
-        const rect = this.renderers.perspective.domElement.getBoundingClientRect();
-        this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-        this.raycaster.setFromCamera(this.mouse, this.cameras.perspective);
+        this.setupRaycaster(event);
         
         // 检测现有方块
         const blockGroup = this.scenes.perspective.children.find(child => 
@@ -406,43 +450,52 @@ class ThreeViewsApp {
         }
     }
 
+    /**
+     * 旋转透视相机
+     * @param {number} deltaX - 水平旋转量
+     * @param {number} deltaY - 垂直旋转量
+     */
     rotateCamera(deltaX, deltaY) {
         const camera = this.cameras.perspective;
         const spherical = new THREE.Spherical();
         const offset = new THREE.Vector3();
         
+        // 将相机位置转换为球坐标
         offset.copy(camera.position).sub(new THREE.Vector3(0, 0, 0));
         spherical.setFromVector3(offset);
         
-        spherical.theta -= deltaX;
-        spherical.phi += deltaY;
-        spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+        // 更新球坐标角度
+        spherical.theta -= deltaX;  // 水平角度
+        spherical.phi += deltaY;    // 垂直角度
+        spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi)); // 限制垂直角度
         
+        // 将球坐标转换回笛卡尔坐标并更新相机位置
         offset.setFromSpherical(spherical);
         camera.position.copy(offset.add(new THREE.Vector3(0, 0, 0)));
         camera.lookAt(0, 0, 0);
     }
     
+    /**
+     * 缩放透视相机
+     * @param {number} delta - 缩放量
+     */
     zoomCamera(delta) {
         const camera = this.cameras.perspective;
         const direction = new THREE.Vector3();
         camera.getWorldDirection(direction);
         
+        // 计算当前距离和新距离
         const distance = camera.position.length();
         const newDistance = Math.max(3, Math.min(20, distance + delta * distance));
         
+        // 更新相机位置
         camera.position.normalize().multiplyScalar(newDistance);
         camera.lookAt(0, 0, 0);
     }
 
-    worldToGrid(worldPos) {
-        return {
-            x: Math.round(worldPos.x + 2),
-            y: Math.round(worldPos.y + 2),
-            z: Math.round(worldPos.z + 2)
-        };
-    }
-
+    /**
+     * 网格坐标转世界坐标
+     */
     gridToWorld(gridPos) {
         return {
             x: gridPos.x - 2,
@@ -451,64 +504,93 @@ class ThreeViewsApp {
         };
     }
 
-    isValidPosition(pos) {
-        return pos.x >= 0 && pos.x < 5 && pos.y >= 0 && pos.y < 5 && pos.z >= 0 && pos.z < 5;
+    /**
+     * 保存当前状态到撤回栈
+     */
+    saveState() {
+        const state = this.workspace.map(x => x.map(y => [...y]));
+        this.undoStack.push(state);
+        if (this.undoStack.length > this.maxHistorySize) {
+            this.undoStack.shift();
+        }
+        this.redoStack = []; // 清空重做栈
     }
 
-    addBlockAtXZ(x, z) {
-        // 计算该XZ坐标已有的方块数量
-        let blockCount = 0;
-        for (let y = 0; y < 5; y++) {
-            if (this.workspace[x][y][z]) {
-                blockCount++;
+    /**
+     * 从状态重建工作空间
+     */
+    restoreFromState(state) {
+        this.workspace = state.map(x => x.map(y => [...y]));
+        this.blocks.clear();
+        
+        for (let x = 0; x < 5; x++) {
+            for (let y = 0; y < 5; y++) {
+                for (let z = 0; z < 5; z++) {
+                    if (this.workspace[x][y][z]) {
+                        this.createBlockDirect(x, y, z);
+                    }
+                }
             }
         }
-        
-        // 如果已经叠了5个方块，无法添加
-        if (blockCount >= 5) return;
-        
-        const targetY = blockCount; // 新方块的Y位置
-        this.workspace[x][targetY][z] = true;
-        const worldPos = this.gridToWorld({x, y: targetY, z});
+        this.updateAllScenes();
+    }
+
+    /**
+     * 直接创建方块（不保存状态）
+     */
+    createBlockDirect(x, y, z) {
+        const worldPos = this.gridToWorld({x, y, z});
         
         const geometry = new THREE.BoxGeometry(1, 1, 1);
         const material = new THREE.MeshLambertMaterial({ color: 0x4CAF50 });
         const cube = new THREE.Mesh(geometry, material);
+        
         const edges = new THREE.EdgesGeometry(geometry);
         const wireframe = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
         
         cube.position.set(worldPos.x, worldPos.y, worldPos.z);
         cube.add(wireframe);
-        cube.userData = { gridPos: {x, y: targetY, z} };
+        cube.userData = { gridPos: {x, y, z} };
         
         this.blocks.add(cube);
+    }
+
+    /**
+     * 创建方块（保存状态）
+     */
+    createBlock(x, y, z) {
+        this.saveState();
+        this.workspace[x][y][z] = true;
+        this.createBlockDirect(x, y, z);
         this.updateAllScenes();
     }
+
+    /**
+     * 在指定XZ坐标添加方块（自动堆叠）
+     */
+    addBlockAtXZ(x, z) {
+        let blockCount = 0;
+        for (let y = 0; y < 5; y++) {
+            if (this.workspace[x][y][z]) blockCount++;
+        }
+        if (blockCount >= 5) return;
+        this.createBlock(x, blockCount, z);
+    }
     
+    /**
+     * 在指定方块上方添加新方块
+     */
     addBlockAbove(x, y, z) {
         const newY = y + 1;
-        
-        // 检查是否超出边界或已被占用
         if (newY >= 5 || this.workspace[x][newY][z]) return;
-        
-        this.workspace[x][newY][z] = true;
-        const worldPos = this.gridToWorld({x, y: newY, z});
-        
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        const material = new THREE.MeshLambertMaterial({ color: 0x4CAF50 });
-        const cube = new THREE.Mesh(geometry, material);
-        const edges = new THREE.EdgesGeometry(geometry);
-        const wireframe = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
-        
-        cube.position.set(worldPos.x, worldPos.y, worldPos.z);
-        cube.add(wireframe);
-        cube.userData = { gridPos: {x, y: newY, z} };
-        
-        this.blocks.add(cube);
-        this.updateAllScenes();
+        this.createBlock(x, newY, z);
     }
     
+    /**
+     * 删除指定位置的方块
+     */
     removeBlock(x, y, z) {
+        this.saveState();
         this.workspace[x][y][z] = false;
         const blockToRemove = this.blocks.children.find(child => 
             child.userData.gridPos && 
@@ -523,32 +605,11 @@ class ThreeViewsApp {
         }
     }
 
-    removeTopBlock(x, z) {
-        // 找到该X-Z坐标的最高方块
-        let topY = -1;
-        for (let y = 4; y >= 0; y--) {
-            if (this.workspace[x][y][z]) {
-                topY = y;
-                break;
-            }
-        }
-        
-        if (topY === -1) return; // 没有方块可删除
-        
-        this.workspace[x][topY][z] = false;
-        const blockToRemove = this.blocks.children.find(child => 
-            child.userData.gridPos && 
-            child.userData.gridPos.x === x &&
-            child.userData.gridPos.y === topY &&
-            child.userData.gridPos.z === z
-        );
-        
-        if (blockToRemove) {
-            this.blocks.remove(blockToRemove);
-            this.updateAllScenes();
-        }
-    }
 
+
+    /**
+     * 更新所有视图中的方块显示
+     */
     updateAllScenes() {
         Object.keys(this.scenes).forEach(viewName => {
             // 移除旧的方块组
@@ -562,13 +623,16 @@ class ThreeViewsApp {
         });
     }
 
-    toggleMode() {
-        this.isAddMode = !this.isAddMode;
-        document.getElementById('mode-btn').textContent = this.isAddMode ? '添加模式' : '删除模式';
-    }
 
+
+    /**
+     * 设置透视相机的视角方向（带动画过渡）
+     * @param {string} direction - 视角方向：top, bottom, front, back, left, right
+     */
     setViewDirection(direction) {
         const camera = this.cameras.perspective;
+        
+        // 预设的相机位置
         const positions = {
             top: [0, 10, 0],
             bottom: [0, -10, 0],
@@ -578,6 +642,7 @@ class ThreeViewsApp {
             right: [10, 0, 0]
         };
         
+        // 预设的相机上方向
         const upVectors = {
             top: [0, 0, -1],
             bottom: [0, 0, 1],
@@ -587,6 +652,7 @@ class ThreeViewsApp {
             right: [0, 1, 0]
         };
         
+        // 动画参数
         const startPos = camera.position.clone();
         const startUp = camera.up.clone();
         const endPos = new THREE.Vector3(...positions[direction]);
@@ -594,10 +660,11 @@ class ThreeViewsApp {
         const duration = 1000;
         const startTime = Date.now();
         
+        // 相机动画函数
         const animateCamera = () => {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / duration, 1);
-            const easeProgress = 1 - Math.pow(1 - progress, 3);
+            const easeProgress = 1 - Math.pow(1 - progress, 3); // 缓动函数
             
             if (progress >= 1) {
                 camera.position.copy(endPos);
@@ -614,12 +681,45 @@ class ThreeViewsApp {
         animateCamera();
     }
 
+    /**
+     * 撤回操作
+     */
+    undo() {
+        if (this.undoStack.length === 0) return;
+        
+        const currentState = this.workspace.map(x => x.map(y => [...y]));
+        this.redoStack.push(currentState);
+        
+        const previousState = this.undoStack.pop();
+        this.restoreFromState(previousState);
+    }
+
+    /**
+     * 重做操作
+     */
+    redo() {
+        if (this.redoStack.length === 0) return;
+        
+        const currentState = this.workspace.map(x => x.map(y => [...y]));
+        this.undoStack.push(currentState);
+        
+        const nextState = this.redoStack.pop();
+        this.restoreFromState(nextState);
+    }
+
+    /**
+     * 清空工作空间，删除所有方块
+     */
     clearWorkspace() {
+        this.saveState();
         this.workspace = new Array(5).fill().map(() => new Array(5).fill().map(() => new Array(5).fill(false)));
         this.blocks.clear();
         this.updateAllScenes();
     }
 
+    /**
+     * 渲染循环，持续渲染所有视图
+     */
     animate() {
         requestAnimationFrame(() => this.animate());
         Object.keys(this.renderers).forEach(viewName => {
@@ -627,12 +727,16 @@ class ThreeViewsApp {
         });
     }
 
+    /**
+     * 处理窗口大小变化事件
+     */
     onWindowResize() {
         Object.keys(this.renderers).forEach(viewName => {
             const container = document.getElementById(`${viewName}-view`);
             const width = container.clientWidth;
             const height = container.clientHeight;
             
+            // 更新透视相机的宽高比
             if (this.cameras[viewName].isPerspectiveCamera) {
                 this.cameras[viewName].aspect = width / height;
             }
@@ -642,10 +746,12 @@ class ThreeViewsApp {
     }
 }
 
-// 全局实例
+// 全局应用实例
 let app;
 
-// 页面加载完成后初始化
+/**
+ * 页面加载完成后初始化应用
+ */
 window.addEventListener('load', () => {
     app = new ThreeViewsApp();
 });

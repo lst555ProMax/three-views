@@ -32,6 +32,7 @@ class HistoryManager {
             }
         }
         this.app.sceneManager.updateAllScenes();
+        this.app.levelManager.onBlockChange();
     }
 
     undo() {

@@ -37,6 +37,7 @@ class BlockManager {
         this.app.workspace[x][y][z] = true;
         this.createBlockDirect(x, y, z);
         this.app.sceneManager.updateAllScenes();
+        this.app.levelManager.onBlockChange();
     }
 
     addBlockAtXZ(x, z) {
@@ -85,6 +86,7 @@ class BlockManager {
             if (blockToRemove) {
                 this.app.blocks.remove(blockToRemove);
                 this.app.sceneManager.updateAllScenes();
+                this.app.levelManager.onBlockChange();
             }
         }
     }

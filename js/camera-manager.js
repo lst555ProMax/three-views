@@ -23,6 +23,13 @@ class CameraManager {
                 const viewSize = this.app.workspaceSize / 2; 
                 this.app.cameras[viewName] = new THREE.OrthographicCamera(-viewSize, viewSize, viewSize, -viewSize, 0.1, 1000);
                 this.setCameraPosition(viewName);
+                const direction = this.app.orthographicViews[viewName];
+                const upVectors = {
+                    front: [0, 1, 0], back: [0, 1, 0],
+                    right: [0, 1, 0], left: [0, 1, 0],
+                    top: [0, 0, -1], bottom: [0, 0, 1]
+                };
+                this.app.cameras[viewName].up.set(...upVectors[direction]);
             }
             this.app.cameras[viewName].lookAt(this.lookAtTarget);
         });
@@ -30,12 +37,31 @@ class CameraManager {
 
     setCameraPosition(viewName) {
         const distance = this.app.workspaceSize;
+        const direction = this.app.orthographicViews[viewName];
         const positions = {
-            front: [0, 0, distance],
-            side: [distance, 0, 0],
-            top: [0, distance, 0]
+            front: [0, 0, distance], back: [0, 0, -distance],
+            right: [distance, 0, 0], left: [-distance, 0, 0],
+            top: [0, distance, 0], bottom: [0, -distance, 0]
         };
-        this.app.cameras[viewName].position.set(...positions[viewName]);
+        this.app.cameras[viewName].position.set(...positions[direction]);
+    }
+
+    updateOrthographicView(viewName, direction) {
+        const distance = this.app.workspaceSize;
+        const positions = {
+            front: [0, 0, distance], back: [0, 0, -distance],
+            right: [distance, 0, 0], left: [-distance, 0, 0],
+            top: [0, distance, 0], bottom: [0, -distance, 0]
+        };
+        const upVectors = {
+            front: [0, 1, 0], back: [0, 1, 0],
+            right: [0, 1, 0], left: [0, 1, 0],
+            top: [0, 0, -1], bottom: [0, 0, 1]
+        };
+        
+        this.app.cameras[viewName].position.set(...positions[direction]);
+        this.app.cameras[viewName].up.set(...upVectors[direction]);
+        this.app.cameras[viewName].lookAt(this.lookAtTarget);
     }
 
     rotateCamera(deltaX, deltaY) {

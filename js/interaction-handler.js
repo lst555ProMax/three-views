@@ -105,8 +105,129 @@ class InteractionHandler {
                         event.preventDefault();
                         this.app.cameraManager.rotateAroundCenter('clockwise');
                         break;
+                    // 数字键 - 工作空间大小
+                    case '3':
+                        event.preventDefault();
+                        this.app.changeWorkspaceSize(3);
+                        document.getElementById('workspace-size').value = '3';
+                        break;
+                    case '4':
+                        event.preventDefault();
+                        this.app.changeWorkspaceSize(4);
+                        document.getElementById('workspace-size').value = '4';
+                        break;
+                    case '5':
+                        event.preventDefault();
+                        this.app.changeWorkspaceSize(5);
+                        document.getElementById('workspace-size').value = '5';
+                        break;
+                    case '6':
+                        event.preventDefault();
+                        this.app.changeWorkspaceSize(6);
+                        document.getElementById('workspace-size').value = '6';
+                        break;
+                    case '7':
+                        event.preventDefault();
+                        this.app.changeWorkspaceSize(7);
+                        document.getElementById('workspace-size').value = '7';
+                        break;
+                    case '8':
+                        event.preventDefault();
+                        this.app.changeWorkspaceSize(8);
+                        document.getElementById('workspace-size').value = '8';
+                        break;
+                    case '9':
+                        event.preventDefault();
+                        this.app.changeWorkspaceSize(9);
+                        document.getElementById('workspace-size').value = '9';
+                        break;
+                    // 视图切换快捷键
+                    case 't':
+                    case 'T':
+                        event.preventDefault();
+                        this.app.setViewDirection('top');
+                        break;
+                    case 'b':
+                    case 'B':
+                        event.preventDefault();
+                        this.app.setViewDirection('bottom');
+                        break;
+                    case 'f':
+                    case 'F':
+                        event.preventDefault();
+                        this.app.setViewDirection('front');
+                        break;
+                    case 'k':
+                    case 'K':
+                        event.preventDefault();
+                        this.app.setViewDirection('back');
+                        break;
+                    case 'l':
+                    case 'L':
+                        event.preventDefault();
+                        this.app.setViewDirection('left');
+                        break;
+                    case 'r':
+                    case 'R':
+                        event.preventDefault();
+                        this.app.setViewDirection('right');
+                        break;
+                    // 角视图快捷键 (Numpad 1-8)
+                    case '1':
+                        event.preventDefault();
+                        this.app.setViewDirection('corner1');
+                        break;
+                    case '2':
+                        event.preventDefault();
+                        this.app.setViewDirection('corner2');
+                        break;
+                    case 'q':
+                    case 'Q':
+                        event.preventDefault();
+                        this.app.setViewDirection('corner3');
+                        break;
+                    case 'e':
+                    case 'E':
+                        event.preventDefault();
+                        this.app.setViewDirection('corner4');
+                        break;
+                    case 'u':
+                    case 'U':
+                        event.preventDefault();
+                        this.app.setViewDirection('corner5');
+                        break;
+                    case 'i':
+                    case 'I':
+                        event.preventDefault();
+                        this.app.setViewDirection('corner6');
+                        break;
+                    case 'o':
+                    case 'O':
+                        event.preventDefault();
+                        this.app.setViewDirection('corner7');
+                        break;
+                    case 'p':
+                    case 'P':
+                        event.preventDefault();
+                        this.app.setViewDirection('corner8');
+                        break;
+                    // 清空工作区
+                    case 'c':
+                    case 'C':
+                        event.preventDefault();
+                        this.app.clearWorkspace();
+                        break;
                 }
             }
+        });
+
+        // 为正交视图添加右键切换功能
+        ['front', 'side', 'top'].forEach(viewName => {
+            const canvas = this.app.renderers[viewName].domElement;
+            canvas.addEventListener('contextmenu', (event) => {
+                event.preventDefault();
+                this.app.toggleOrthographicView(viewName);
+            });
         });
 
         window.addEventListener('resize', () => this.app.cameraManager.onWindowResize());

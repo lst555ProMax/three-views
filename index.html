@@ -90,17 +90,20 @@
                         <option value="8">8×8×8</option>
                         <option value="9">9×9×9</option>
                     </select>
-                    <button onclick="app.clearWorkspace()" style="padding: 8px 15px; font-size: 14px;">清空</button>
+                    <div style="display: flex; gap: 5px;">
+                        <button id="free-mode-btn" onclick="app.setFreeMode()" style="padding: 8px 15px; font-size: 14px; background: #007cba;">自由探索</button>
+                        <button id="level-mode-btn" onclick="app.setLevelMode()" style="padding: 8px 15px; font-size: 14px;">关卡生成</button>
+                    </div>
                 </div>
                 <div style="margin-bottom: 10px; border-top: 1px solid #ddd; padding-top: 10px;">
                     <div style="font-size: 12px; margin-bottom: 5px; color: #666;">标准视图:</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px; margin-bottom: 8px;">
-                        <button onclick="app.setViewDirection('top')">顶视图</button>
-                        <button onclick="app.setViewDirection('bottom')">底视图</button>
-                        <button onclick="app.setViewDirection('front')">前视图</button>
-                        <button onclick="app.setViewDirection('back')">后视图</button>
-                        <button onclick="app.setViewDirection('left')">左视图</button>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin-bottom: 8px;">
+                        <button onclick="app.setViewDirection('front')">正视图</button>
+                        <button onclick="app.setViewDirection('back')">背视图</button>
                         <button onclick="app.setViewDirection('right')">右视图</button>
+                        <button onclick="app.setViewDirection('left')">左视图</button>
+                        <button onclick="app.setViewDirection('top')">俯视图</button>
+                        <button onclick="app.setViewDirection('bottom')">仰视图</button>
                     </div>
                     <div style="font-size: 12px; margin-bottom: 5px; color: #666;">角视图:</div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px;">
@@ -122,6 +125,13 @@
                     <div>WASD: 前后左右移动</div>
                     <div>↑↓: 上下移动</div>
                     <div>←→: 绕中心旋转</div>
+                    <div style="margin-top: 8px; border-top: 1px solid #ddd; padding-top: 8px;">
+                        <div><strong>快捷键:</strong></div>
+                        <div>3-9: 工作空间大小</div>
+                        <div>T/B/F/K/L/R: 标准视图</div>
+                        <div>1/2/Q/E/U/I/O/P: 角视图</div>
+                        <div>C: 清空工作区</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -130,13 +140,13 @@
         </div>
         <div class="side-views">
             <div class="view" id="front-view">
-                <div class="view-label">正视图</div>
+                <div class="view-label">正视图 - 右键切换</div>
             </div>
             <div class="view" id="side-view">
-                <div class="view-label">侧视图</div>
+                <div class="view-label">右视图 - 右键切换</div>
             </div>
             <div class="view" id="top-view">
-                <div class="view-label">俯视图</div>
+                <div class="view-label">俯视图 - 右键切换</div>
             </div>
         </div>
     </div>
@@ -148,6 +158,7 @@
     <script src="js/workspace-builder.js"></script>
     <script src="js/block-manager.js"></script>
     <script src="js/interaction-handler.js"></script>
+    <script src="js/level-manager.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

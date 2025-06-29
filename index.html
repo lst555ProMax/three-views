@@ -80,6 +80,13 @@
         <div class="left-sidebar">
             <div class="controls">
                 <div style="margin-bottom: 10px;">
+                    <div style="font-size: 12px; margin-bottom: 5px; color: #666;">工作空间大小:</div>
+                    <select id="workspace-size" onchange="app.changeWorkspaceSize(this.value)" style="width: 100%; padding: 5px; margin-bottom: 8px;">
+                        <option value="3">3×3×3</option>
+                        <option value="5" selected>5×5×5</option>
+                        <option value="7">7×7×7</option>
+                        <option value="9">9×9×9</option>
+                    </select>
                     <button onclick="app.clearWorkspace()" style="padding: 8px 15px; font-size: 14px;">清空</button>
                 </div>
                 <div style="margin-bottom: 10px; border-top: 1px solid #ddd; padding-top: 10px;">
@@ -128,6 +135,12 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/history-manager.js"></script>
+    <script src="js/camera-manager.js"></script>
+    <script src="js/scene-manager.js"></script>
+    <script src="js/workspace-builder.js"></script>
+    <script src="js/block-manager.js"></script>
+    <script src="js/interaction-handler.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

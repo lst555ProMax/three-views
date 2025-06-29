@@ -54,6 +54,7 @@ class ThreeViewsApp {
 
     rebuildWorkspace() {
         this.sceneManager.clearAllScenes();
+        this.cameraManager.setupCameras(); // 重新设置相机以适配新的工作空间大小
         this.workspaceBuilder.buildAll();
         this.sceneManager.addToAllScenes();
     }

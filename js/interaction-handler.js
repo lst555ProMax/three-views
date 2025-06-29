@@ -64,6 +64,48 @@ class InteractionHandler {
                        (event.ctrlKey && event.key === 'y')) {
                 event.preventDefault();
                 this.app.historyManager.redo();
+            } else if (!event.ctrlKey) {
+                // 键盘相机控制
+                switch(event.key) {
+                    // WASD - 前后左右移动
+                    case 'w':
+                    case 'W':
+                        event.preventDefault();
+                        this.app.cameraManager.moveCamera('forward');
+                        break;
+                    case 's':
+                    case 'S':
+                        event.preventDefault();
+                        this.app.cameraManager.moveCamera('backward');
+                        break;
+                    case 'a':
+                    case 'A':
+                        event.preventDefault();
+                        this.app.cameraManager.moveCamera('left');
+                        break;
+                    case 'd':
+                    case 'D':
+                        event.preventDefault();
+                        this.app.cameraManager.moveCamera('right');
+                        break;
+                    // 方向键 - 上下移动和旋转
+                    case 'ArrowUp':
+                        event.preventDefault();
+                        this.app.cameraManager.moveCamera('up');
+                        break;
+                    case 'ArrowDown':
+                        event.preventDefault();
+                        this.app.cameraManager.moveCamera('down');
+                        break;
+                    case 'ArrowLeft':
+                        event.preventDefault();
+                        this.app.cameraManager.rotateAroundCenter('counterclockwise');
+                        break;
+                    case 'ArrowRight':
+                        event.preventDefault();
+                        this.app.cameraManager.rotateAroundCenter('clockwise');
+                        break;
+                }
             }
         });
 

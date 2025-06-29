@@ -83,8 +83,11 @@
                     <div style="font-size: 12px; margin-bottom: 5px; color: #666;">工作空间大小:</div>
                     <select id="workspace-size" onchange="app.changeWorkspaceSize(this.value)" style="width: 100%; padding: 5px; margin-bottom: 8px;">
                         <option value="3">3×3×3</option>
+                        <option value="4">4×4×4</option>
                         <option value="5" selected>5×5×5</option>
+                        <option value="6">6×6×6</option>
                         <option value="7">7×7×7</option>
+                        <option value="8">8×8×8</option>
                         <option value="9">9×9×9</option>
                     </select>
                     <button onclick="app.clearWorkspace()" style="padding: 8px 15px; font-size: 14px;">清空</button>
@@ -112,9 +115,13 @@
                     </div>
                 </div>
                 <div style="font-size: 12px; color: #666;">
-                    <div>左键: 添加/删除方块</div>
+                    <div>左键: 添加方块</div>
+                    <div>右键: 删除方块</div>
                     <div>拖拽: 旋转视角</div>
                     <div>滚轮: 缩放</div>
+                    <div>WASD: 前后左右移动</div>
+                    <div>↑↓: 上下移动</div>
+                    <div>←→: 绕中心旋转</div>
                 </div>
             </div>
         </div>

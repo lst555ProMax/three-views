@@ -4,6 +4,7 @@
 class CameraManager {
     constructor(app) {
         this.app = app;
+        this.lookAtTarget = new THREE.Vector3(0, 0, 0); // 动态视觉中心
     }
 
     setupCameras() {
@@ -16,19 +17,19 @@ class CameraManager {
 
             if (viewName === 'perspective') {
                 this.app.cameras[viewName] = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-                const distance = this.app.workspaceSize * 1.6;
+                const distance = this.app.workspaceSize;
                 this.app.cameras[viewName].position.set(distance, distance, distance);
             } else {
-                const viewSize = this.app.workspaceSize / 2 + 2;
+                const viewSize = this.app.workspaceSize / 2; 
                 this.app.cameras[viewName] = new THREE.OrthographicCamera(-viewSize, viewSize, viewSize, -viewSize, 0.1, 1000);
                 this.setCameraPosition(viewName);
             }
-            this.app.cameras[viewName].lookAt(0, 0, 0);
+            this.app.cameras[viewName].lookAt(this.lookAtTarget);
         });
     }
 
     setCameraPosition(viewName) {
-        const distance = this.app.workspaceSize * 1.6;
+        const distance = this.app.workspaceSize;
         const positions = {
             front: [0, 0, distance],
             side: [distance, 0, 0],
@@ -42,7 +43,8 @@ class CameraManager {
         const spherical = new THREE.Spherical();
         const offset = new THREE.Vector3();
         
-        offset.copy(camera.position);
+        // 计算相机相对于视觉中心的偏移量
+        offset.copy(camera.position).sub(this.lookAtTarget);
         spherical.setFromVector3(offset);
         
         spherical.theta -= deltaX;
@@ -50,26 +52,102 @@ class CameraManager {
         spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
         
         offset.setFromSpherical(spherical);
-        camera.position.copy(offset);
-        camera.lookAt(0, 0, 0);
+        camera.position.copy(this.lookAtTarget).add(offset);
+        camera.lookAt(this.lookAtTarget);
     }
 
     zoomCamera(delta) {
         const camera = this.app.cameras.perspective;
-        const distance = camera.position.length();
+        // 计算相机到视觉中心的距离
+        const offset = new THREE.Vector3().copy(camera.position).sub(this.lookAtTarget);
+        const distance = offset.length();
         const newDistance = Math.max(3, Math.min(20, distance + delta * distance));
-        camera.position.normalize().multiplyScalar(newDistance);
-        camera.lookAt(0, 0, 0);
+        
+        // 保持方向，只改变距离
+        const direction = offset.normalize();
+        camera.position.copy(this.lookAtTarget).add(direction.multiplyScalar(newDistance));
+        camera.lookAt(this.lookAtTarget);
+    }
+
+    moveCamera(direction) {
+        const camera = this.app.cameras.perspective;
+        const moveSpeed = 0.5;
+        
+        // 设置移动边界（基于工作空间大小）
+        const boundary = this.app.workspaceSize * 1.5;
+        
+        // 获取相机的前、右、上方向向量
+        const forward = new THREE.Vector3();
+        const right = new THREE.Vector3();
+        const up = new THREE.Vector3(0, 1, 0);
+        
+        camera.getWorldDirection(forward);
+        right.crossVectors(forward, up).normalize();
+        
+        const moveVector = new THREE.Vector3();
+        
+        switch(direction) {
+            case 'forward':
+                moveVector.copy(forward).multiplyScalar(moveSpeed);
+                break;
+            case 'backward':
+                moveVector.copy(forward).multiplyScalar(-moveSpeed);
+                break;
+            case 'left':
+                moveVector.copy(right).multiplyScalar(-moveSpeed);
+                break;
+            case 'right':
+                moveVector.copy(right).multiplyScalar(moveSpeed);
+                break;
+            case 'up':
+                moveVector.set(0, moveSpeed, 0);
+                break;
+            case 'down':
+                moveVector.set(0, -moveSpeed, 0);
+                break;
+        }
+        
+        // 计算新位置
+        const newCameraPos = new THREE.Vector3().copy(camera.position).add(moveVector);
+        const newLookAtTarget = new THREE.Vector3().copy(this.lookAtTarget).add(moveVector);
+        
+        // 检查边界限制
+        if (Math.abs(newLookAtTarget.x) <= boundary && 
+            Math.abs(newLookAtTarget.y) <= boundary && 
+            Math.abs(newLookAtTarget.z) <= boundary) {
+            
+            camera.position.copy(newCameraPos);
+            this.lookAtTarget.copy(newLookAtTarget);
+            camera.lookAt(this.lookAtTarget);
+        }
+    }
+
+    rotateAroundCenter(direction) {
+        const camera = this.app.cameras.perspective;
+        const rotateSpeed = 0.1;
+        
+        // 以当前视觉中心为中心旋转相机
+        const offset = new THREE.Vector3();
+        offset.copy(camera.position).sub(this.lookAtTarget);
+        
+        // 绕Y轴旋转
+        const angle = direction === 'clockwise' ? -rotateSpeed : rotateSpeed;
+        offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+        
+        camera.position.copy(this.lookAtTarget).add(offset);
+        camera.lookAt(this.lookAtTarget);
     }
 
     setViewDirection(direction) {
         const camera = this.app.cameras.perspective;
+        const distance = this.app.workspaceSize * 1.6;
+        const corner_side = distance / Math.sqrt(3);
         
         const positions = {
-            top: [0, 10, 0], bottom: [0, -10, 0], front: [0, 0, 10], back: [0, 0, -10],
-            left: [-10, 0, 0], right: [10, 0, 0],
-            corner1: [8, 8, 8], corner2: [-8, 8, 8], corner3: [8, -8, 8], corner4: [-8, -8, 8],
-            corner5: [8, 8, -8], corner6: [-8, 8, -8], corner7: [8, -8, -8], corner8: [-8, -8, -8]
+            top: [0, distance, 0], bottom: [0, -distance, 0], front: [0, 0, distance], back: [0, 0, -distance],
+            left: [-distance, 0, 0], right: [distance, 0, 0],
+            corner1: [corner_side, corner_side, corner_side], corner2: [-corner_side, corner_side, corner_side], corner3: [corner_side, -corner_side, corner_side], corner4: [-corner_side, -corner_side, corner_side],
+            corner5: [corner_side, corner_side, -corner_side], corner6: [-corner_side, corner_side, -corner_side], corner7: [corner_side, -corner_side, -corner_side], corner8: [-corner_side, -corner_side, -corner_side]
         };
         
         const upVectors = {
@@ -84,6 +162,9 @@ class CameraManager {
         endCamera.position.set(...positions[direction]);
         endCamera.up.set(...upVectors[direction]);
         endCamera.lookAt(0, 0, 0);
+        
+        // 更新视觉中心为原点（预设视图都是看向原点）
+        this.lookAtTarget.set(0, 0, 0);
         
         const startQuaternion = startCamera.quaternion.clone();
         const endQuaternion = endCamera.quaternion.clone();

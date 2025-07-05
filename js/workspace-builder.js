@@ -17,55 +17,52 @@ class WorkspaceBuilder {
             transparent: true 
         });
         
-        const half = this.app.workspaceSize / 2;  // 工作空间的一半
-        const gridCount = this.app.workspaceSize + 1;  // 网格线数量
+        const half = this.app.workspaceSize / 2;
+        const gridCount = this.app.workspaceSize + 1;
         
-        // 底面网格
-        for (let x = 0; x < gridCount; x++) {
-            const geometry = new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(x - half, -half, -half),
-                new THREE.Vector3(x - half, -half, half)
-            ]);
-            this.app.gridLines.add(new THREE.Line(geometry, lineMaterial));
-        }
-        for (let z = 0; z < gridCount; z++) {
-            const geometry = new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(-half, -half, z - half),
-                new THREE.Vector3(half, -half, z - half)
-            ]);
-            this.app.gridLines.add(new THREE.Line(geometry, lineMaterial));
-        }
+        // 网格面配置：[planeName, fixedAxis, fixedValue, axis1, axis2]
+        const gridConfigs = [
+            ['bottom', 'y', -half, 'x', 'z'],  // 底面：Y固定在-half，X和Z变化
+            ['left', 'x', -half, 'y', 'z'],    // 左面：X固定在-half，Y和Z变化
+            ['back', 'z', -half, 'x', 'y']     // 后面：Z固定在-half，X和Y变化
+        ];
         
-        // 左面网格
-        for (let y = 0; y < gridCount; y++) {
-            const geometry = new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(-half, y - half, -half),
-                new THREE.Vector3(-half, y - half, half)
-            ]);
-            this.app.gridLines.add(new THREE.Line(geometry, lineMaterial));
-        }
-        for (let z = 0; z < gridCount; z++) {
-            const geometry = new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(-half, -half, z - half),
-                new THREE.Vector3(-half, half, z - half)
-            ]);
-            this.app.gridLines.add(new THREE.Line(geometry, lineMaterial));
+        gridConfigs.forEach(([planeName, fixedAxis, fixedValue, axis1, axis2]) => {
+            this.createGridPlane(lineMaterial, half, gridCount, fixedAxis, fixedValue, axis1, axis2);
+        });
+    }
+
+    createGridPlane(material, half, gridCount, fixedAxis, fixedValue, axis1, axis2) {
+        // 沿着axis1方向的线
+        for (let i = 0; i < gridCount; i++) {
+            const start = new THREE.Vector3();
+            const end = new THREE.Vector3();
+            
+            start[fixedAxis] = fixedValue;
+            end[fixedAxis] = fixedValue;
+            start[axis1] = i - half;
+            end[axis1] = i - half;
+            start[axis2] = -half;
+            end[axis2] = half;
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
+            this.app.gridLines.add(new THREE.Line(geometry, material));
         }
         
-        // 后面网格
-        for (let x = 0; x < gridCount; x++) {
-            const geometry = new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(x - half, -half, -half),
-                new THREE.Vector3(x - half, half, -half)
-            ]);
-            this.app.gridLines.add(new THREE.Line(geometry, lineMaterial));
-        }
-        for (let y = 0; y < gridCount; y++) {
-            const geometry = new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(-half, y - half, -half),
-                new THREE.Vector3(half, y - half, -half)
-            ]);
-            this.app.gridLines.add(new THREE.Line(geometry, lineMaterial));
+        // 沿着axis2方向的线
+        for (let i = 0; i < gridCount; i++) {
+            const start = new THREE.Vector3();
+            const end = new THREE.Vector3();
+            
+            start[fixedAxis] = fixedValue;
+            end[fixedAxis] = fixedValue;
+            start[axis1] = -half;
+            end[axis1] = half;
+            start[axis2] = i - half;
+            end[axis2] = i - half;
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints([start, end]);
+            this.app.gridLines.add(new THREE.Line(geometry, material));
         }
     }
 
@@ -109,32 +106,10 @@ class WorkspaceBuilder {
                 plane.userData = { isGroundPlane: true, layer: y };
                 
                 // 为当前层平面添加网格线
-                const gridGroup = new THREE.Group();
-                const gridMaterial = new THREE.LineBasicMaterial({ 
-                    color: 0x0066ff, 
-                    opacity: 0.3, 
-                    transparent: true 
-                });
-                
-                const half = this.app.workspaceSize / 2;
-                // 水平网格线
-                for (let x = 0; x <= this.app.workspaceSize; x++) {
-                    const geometry = new THREE.BufferGeometry().setFromPoints([
-                        new THREE.Vector3(x - half, worldY, -half),
-                        new THREE.Vector3(x - half, worldY, half)
-                    ]);
-                    gridGroup.add(new THREE.Line(geometry, gridMaterial));
-                }
-                for (let z = 0; z <= this.app.workspaceSize; z++) {
-                    const geometry = new THREE.BufferGeometry().setFromPoints([
-                        new THREE.Vector3(-half, worldY, z - half),
-                        new THREE.Vector3(half, worldY, z - half)
-                    ]);
-                    gridGroup.add(new THREE.Line(geometry, gridMaterial));
-                }
+                const gridGroup = this.createLayerGrid(worldY, 0x0066ff, 0.3);
                 
                 this.app.placeholders.add(plane);
-                this.app.placeholders.add(gridGroup);
+                if (gridGroup) this.app.placeholders.add(gridGroup);
             }
         }
         
@@ -147,48 +122,69 @@ class WorkspaceBuilder {
         const half = this.app.workspaceSize / 2;
         const arrowPos = half + 0.5;
         
-        // X轴 - 红色
-        const xGeometry = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(-half, -half, -half),
-            new THREE.Vector3(arrowPos, -half, -half)
-        ]);
-        const xLine = new THREE.Line(xGeometry, new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 3 }));
-        this.app.axisHelper.add(xLine);
+        // 轴配置：[axisName, color, endPos, rotation]
+        const axisConfigs = [
+            ['X', 0xff0000, [arrowPos, -half, -half], [0, 0, -Math.PI / 2]],
+            ['Y', 0x00ff00, [-half, arrowPos, -half], [0, 0, 0]],
+            ['Z', 0x0000ff, [-half, -half, arrowPos], [Math.PI / 2, 0, 0]]
+        ];
         
-        const xArrowGeometry = new THREE.ConeGeometry(0.1, 0.3, 8);
-        const xArrow = new THREE.Mesh(xArrowGeometry, new THREE.MeshBasicMaterial({ color: 0xff0000 }));
-        xArrow.position.set(arrowPos, -half, -half);
-        xArrow.rotateZ(-Math.PI / 2);
-        this.app.axisHelper.add(xArrow);
-        
-        // Y轴 - 绿色
-        const yGeometry = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(-half, -half, -half),
-            new THREE.Vector3(-half, arrowPos, -half)
-        ]);
-        const yLine = new THREE.Line(yGeometry, new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 3 }));
-        this.app.axisHelper.add(yLine);
-        
-        const yArrowGeometry = new THREE.ConeGeometry(0.1, 0.3, 8);
-        const yArrow = new THREE.Mesh(yArrowGeometry, new THREE.MeshBasicMaterial({ color: 0x00ff00 }));
-        yArrow.position.set(-half, arrowPos, -half);
-        this.app.axisHelper.add(yArrow);
-        
-        // Z轴 - 蓝色
-        const zGeometry = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(-half, -half, -half),
-            new THREE.Vector3(-half, -half, arrowPos)
-        ]);
-        const zLine = new THREE.Line(zGeometry, new THREE.LineBasicMaterial({ color: 0x0000ff, linewidth: 3 }));
-        this.app.axisHelper.add(zLine);
-        
-        const zArrowGeometry = new THREE.ConeGeometry(0.1, 0.3, 8);
-        const zArrow = new THREE.Mesh(zArrowGeometry, new THREE.MeshBasicMaterial({ color: 0x0000ff }));
-        zArrow.position.set(-half, -half, arrowPos);
-        zArrow.rotateX(Math.PI / 2);
-        this.app.axisHelper.add(zArrow);
+        axisConfigs.forEach(([axisName, color, endPos, rotation]) => {
+            this.createAxis(half, color, endPos, rotation);
+        });
         
         this.createAxisLabels();
+    }
+
+    createAxis(half, color, endPos, rotation) {
+        // 创建轴线
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-half, -half, -half),
+            new THREE.Vector3(...endPos)
+        ]);
+        const line = new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({ color, linewidth: 3 }));
+        this.app.axisHelper.add(line);
+        
+        // 创建箭头
+        const arrowGeometry = new THREE.ConeGeometry(0.1, 0.3, 8);
+        const arrow = new THREE.Mesh(arrowGeometry, new THREE.MeshBasicMaterial({ color }));
+        arrow.position.set(...endPos);
+        if (rotation[0]) arrow.rotateX(rotation[0]);
+        if (rotation[1]) arrow.rotateY(rotation[1]);
+        if (rotation[2]) arrow.rotateZ(rotation[2]);
+        this.app.axisHelper.add(arrow);
+    }
+
+    createLayerGrid(yPosition, color, opacity) {
+        const gridGroup = new THREE.Group();
+        const gridMaterial = new THREE.LineBasicMaterial({ 
+            color, 
+            opacity, 
+            transparent: true 
+        });
+        
+        const half = this.app.workspaceSize / 2;
+        const gridCount = this.app.workspaceSize + 1;
+        
+        // X方向的线
+        for (let x = 0; x < gridCount; x++) {
+            const geometry = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(x - half, yPosition, -half),
+                new THREE.Vector3(x - half, yPosition, half)
+            ]);
+            gridGroup.add(new THREE.Line(geometry, gridMaterial));
+        }
+        
+        // Z方向的线
+        for (let z = 0; z < gridCount; z++) {
+            const geometry = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-half, yPosition, z - half),
+                new THREE.Vector3(half, yPosition, z - half)
+            ]);
+            gridGroup.add(new THREE.Line(geometry, gridMaterial));
+        }
+        
+        return gridGroup;
     }
 
     createAxisLabels() {

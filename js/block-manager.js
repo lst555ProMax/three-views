@@ -26,7 +26,7 @@ class BlockManager {
         if (this.app.renderMode === 'wireframe') {
             // 线框模式：显示边框 + 不可见碰撞体
             const edges = new THREE.EdgesGeometry(geometry);
-            const wireframe = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x4CAF50, linewidth: 2 }));
+            const wireframe = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: this.app.blockColor, linewidth: 2 }));
             // 创建不可见的碰撞体用于射线检测
             const invisibleMaterial = new THREE.MeshBasicMaterial({ visible: false });
             cube = new THREE.Mesh(geometry, invisibleMaterial);
@@ -34,17 +34,17 @@ class BlockManager {
         } else if (this.app.renderMode === 'transparent') {
             // 透明模式：半透明实体
             material = new THREE.MeshLambertMaterial({ 
-                color: 0x4CAF50, 
+                color: this.app.blockColor, 
                 transparent: true, 
                 opacity: 0.5 
             });
             cube = new THREE.Mesh(geometry, material);
             const edges = new THREE.EdgesGeometry(geometry);
-            const wireframe = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x2E7D32 }));
+            const wireframe = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: this.app.blockColor }));
             cube.add(wireframe);
         } else {
             // 实体模式：默认模式
-            material = new THREE.MeshLambertMaterial({ color: 0x4CAF50 });
+            material = new THREE.MeshLambertMaterial({ color: this.app.blockColor });
             cube = new THREE.Mesh(geometry, material);
             const edges = new THREE.EdgesGeometry(geometry);
             const wireframe = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
@@ -167,9 +167,7 @@ class BlockManager {
         this.app.sceneManager.updateAllScenes();
     }
 
-    createWorkspaceArray(size) {
-        return new Array(size).fill().map(() => new Array(size).fill().map(() => new Array(size).fill(false)));
-    }
+
 
     updateAllBlocksRender() {
         const blocks = [...this.app.blocks.children];
@@ -179,5 +177,9 @@ class BlockManager {
             this.createBlockDirect(gridPos.x, gridPos.y, gridPos.z);
         });
         this.app.sceneManager.updateAllScenes();
+    }
+
+    updateAllBlocksColor() {
+        this.updateAllBlocksRender();
     }
 }

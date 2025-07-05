@@ -22,6 +22,12 @@ class ThreeViewsApp {
         // 渲染模式
         this.renderMode = 'solid'; // 'solid', 'wireframe', 'transparent'
         
+        // 方块颜色
+        this.blockColor = 0x4CAF50;
+        
+        // 关卡类型
+        this.levelType = 'normal'; // 'normal', 'color'
+        
         // 正交视图状态
         this.orthographicViews = {
             front: 'front',
@@ -136,6 +142,8 @@ class ThreeViewsApp {
         }
         this.uiManager.updateModeButtons('free');
         this.uiManager.updateViewLabelsForMode(false);
+        this.uiManager.updateColorPickerVisibility(true);
+        this.uiManager.updateLevelTypeVisibility(false);
         // 重置视角为右上前角视图
         this.cameraManager.setViewDirection('corner1');
     }
@@ -150,13 +158,15 @@ class ThreeViewsApp {
         this.levelManager.generateLevel();
         this.uiManager.updateModeButtons('level');
         this.uiManager.updateViewLabelsForMode(true);
+        this.uiManager.updateColorPickerVisibility(false);
+        this.uiManager.updateLevelTypeVisibility(true);
         // 重置视角为右上前角视图
         this.cameraManager.setViewDirection('corner1');
     }
 
     setRenderMode(mode) {
         this.renderMode = mode;
-        this.uiManager.updateRenderButtons(mode);
+        this.uiManager.updateRenderButton(mode);
         this.blockManager.updateAllBlocksRender();
     }
 
@@ -164,7 +174,7 @@ class ThreeViewsApp {
         const wasLevelMode = this.levelManager.isLevelMode;
         this.gravityMode = enabled;
         this.currentLayer = enabled ? 0 : 1;
-        this.uiManager.updateGravityButtons(enabled);
+        this.uiManager.updateGravityButton(enabled);
         this.uiManager.updateLayerControl(enabled);
         if (!enabled) {
             this.uiManager.updateCurrentLayer(this.currentLayer);
@@ -178,6 +188,28 @@ class ThreeViewsApp {
             this.levelManager.generateLevel();
             this.uiManager.updateViewLabelsForMode(true);
         }
+    }
+
+    toggleGravityMode() {
+        this.setGravityMode(!this.gravityMode);
+    }
+
+    toggleRenderMode() {
+        const modes = ['solid', 'wireframe', 'transparent'];
+        const currentIndex = modes.indexOf(this.renderMode);
+        const nextIndex = (currentIndex + 1) % modes.length;
+        this.setRenderMode(modes[nextIndex]);
+    }
+
+    setBlockColor(colorHex) {
+        this.blockColor = parseInt(colorHex.replace('#', '0x'));
+        this.blockManager.updateAllBlocksColor();
+    }
+
+    setLevelType(type) {
+        this.levelType = type;
+        this.uiManager.updateLevelTypeButtons(type);
+        this.levelManager.generateLevel();
     }
 
     changeLayer(delta) {

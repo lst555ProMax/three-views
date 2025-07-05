@@ -57,7 +57,7 @@ class SceneManager {
             //  找到旧的方块组（是组对象，且包含子对象满足：有用户数据、有网格位置信息、不是占位符）
             const oldBlocks = this.app.scenes[viewName].children.filter(child => 
                 child.type === 'Group' && child.children.some(c => c.userData && c.userData.gridPos && !c.userData.isPlaceholder)
-            ); // ?
+            );
             oldBlocks.forEach(group => this.app.scenes[viewName].remove(group));  // 移除旧方块
             this.app.scenes[viewName].add(this.app.blocks.clone());  //  添加新方块
         });

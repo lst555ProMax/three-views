@@ -39,9 +39,12 @@ class UIManager {
         this.updateViewLabel('side', 'right');
         this.updateViewLabel('top', 'top');
         this.updateModeButtons('free');
-        this.updateGravityButtons(true);
+        this.updateGravityButton(true);
         this.updateLayerControl(true);
-        this.updateRenderButtons('solid');
+        this.updateRenderButton('solid');
+        this.updateColorPickerVisibility(true);
+        this.updateLevelTypeVisibility(false);
+        this.updateLevelTypeButtons('normal');
     }
 
     updateViewLabelsForMode(isLevelMode) {
@@ -50,16 +53,16 @@ class UIManager {
         this.updateViewLabel('top', this.app.orthographicViews.top, isLevelMode);
     }
 
-    updateGravityButtons(gravityMode) {
-        const gravityBtn = document.getElementById('gravity-mode-btn');
-        const noGravityBtn = document.getElementById('no-gravity-mode-btn');
-        
-        if (gravityMode) {
-            gravityBtn.style.background = '#007cba';
-            noGravityBtn.style.background = '#ccc';
-        } else {
-            gravityBtn.style.background = '#ccc';
-            noGravityBtn.style.background = '#ff9800';
+    updateGravityButton(gravityMode) {
+        const gravityBtn = document.getElementById('gravity-toggle-btn');
+        if (gravityBtn) {
+            if (gravityMode) {
+                gravityBtn.textContent = '重力生效';
+                gravityBtn.style.background = '#007cba';
+            } else {
+                gravityBtn.textContent = '重力失效';
+                gravityBtn.style.background = '#ff9800';
+            }
         }
     }
 
@@ -76,21 +79,48 @@ class UIManager {
         currentLayerSpan.textContent = layer;
     }
 
-    updateRenderButtons(activeMode) {
-        const solidBtn = document.getElementById('solid-render-btn');
-        const wireframeBtn = document.getElementById('wireframe-render-btn');
-        const transparentBtn = document.getElementById('transparent-render-btn');
+    updateColorPickerVisibility(visible) {
+        const colorPicker = document.getElementById('color-picker-control');
+        if (colorPicker) {
+            colorPicker.style.display = visible ? 'flex' : 'none';
+        }
+    }
+
+    updateLevelTypeVisibility(visible) {
+        const levelTypeControl = document.getElementById('level-type-control');
+        if (levelTypeControl) {
+            levelTypeControl.style.display = visible ? 'block' : 'none';
+        }
+    }
+
+    updateLevelTypeButtons(activeType) {
+        const normalBtn = document.getElementById('normal-level-btn');
+        const colorBtn = document.getElementById('color-level-btn');
         
-        [solidBtn, wireframeBtn, transparentBtn].forEach(btn => {
-            if (btn) btn.style.background = '#ccc';
-        });
-        
-        if (activeMode === 'solid' && solidBtn) {
-            solidBtn.style.background = '#007cba';
-        } else if (activeMode === 'wireframe' && wireframeBtn) {
-            wireframeBtn.style.background = '#ff9800';
-        } else if (activeMode === 'transparent' && transparentBtn) {
-            transparentBtn.style.background = '#9c27b0';
+        if (normalBtn && colorBtn) {
+            if (activeType === 'normal') {
+                normalBtn.style.background = '#007cba';
+                colorBtn.style.background = '#ccc';
+            } else {
+                normalBtn.style.background = '#ccc';
+                colorBtn.style.background = '#9c27b0';
+            }
+        }
+    }
+
+    updateRenderButton(activeMode) {
+        const renderBtn = document.getElementById('render-toggle-btn');
+        if (renderBtn) {
+            if (activeMode === 'solid') {
+                renderBtn.textContent = '实心方块';
+                renderBtn.style.background = '#007cba';
+            } else if (activeMode === 'wireframe') {
+                renderBtn.textContent = '描线方块';
+                renderBtn.style.background = '#ff9800';
+            } else if (activeMode === 'transparent') {
+                renderBtn.textContent = '透明方块';
+                renderBtn.style.background = '#9c27b0';
+            }
         }
     }
 }

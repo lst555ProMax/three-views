@@ -263,162 +263,125 @@ class InteractionHandler {
     onMouseClick(event) {
         if (this.isDragging) return;
         this.setupRaycaster(event);
-        
-        if (this.app.gravityMode) {
-            // 重力模式：原有逻辑
-            const blockGroup = this.app.scenes.perspective.children.find(child => 
-                child.type === 'Group' && child.children.some(c => c.userData && c.userData.gridPos && !c.userData.isGroundPlane)
-            );
-            const blockIntersects = blockGroup ? 
-                this.app.raycaster.intersectObjects(blockGroup.children, true) : [];
-            
-            if (blockIntersects.length > 0) {
-                for (let intersect of blockIntersects) {
-                    const block = intersect.object;
-                    if (block.userData && block.userData.gridPos) {
-                        const intersectPoint = intersect.point;
-                        const blockPos = block.position;
-                        
-                        const tolerance = 0.5;
-                        if (Math.abs(intersectPoint.x - blockPos.x) <= tolerance &&
-                            Math.abs(intersectPoint.y - blockPos.y) <= tolerance &&
-                            Math.abs(intersectPoint.z - blockPos.z) <= tolerance) {
-                            const gridPos = block.userData.gridPos;
-                            this.app.blockManager.addBlockAbove(gridPos.x, gridPos.y, gridPos.z);
-                            return;
-                        }
-                    }
-                }
-            }
-            
-            const placeholderGroup = this.app.scenes.perspective.children.find(child => 
-                child.type === 'Group' && child.children.length > 0 && 
-                child.children[0].userData && child.children[0].userData.isGroundPlane
-            );
-            const planeIntersects = placeholderGroup ? 
-                this.app.raycaster.intersectObjects(placeholderGroup.children, false) : [];
-            
-            if (planeIntersects.length > 0) {
-                const intersectPoint = planeIntersects[0].point;
-                const half = this.app.workspaceSize / 2;
-                const gridX = Math.round(intersectPoint.x + half - 0.5);
-                const gridZ = Math.round(intersectPoint.z + half - 0.5);
-                
-                if (gridX >= 0 && gridX < this.app.workspaceSize && gridZ >= 0 && gridZ < this.app.workspaceSize) {
-                    this.app.blockManager.addBlockAtXZ(gridX, gridZ);
-                }
-            }
-        } else {
-            // 无重力模式：优先检测当前层方块，再检测平面
-            const blockGroup = this.app.scenes.perspective.children.find(child => 
-                child.type === 'Group' && child.children.some(c => c.userData && c.userData.gridPos && !c.userData.isGroundPlane)
-            );
-            const blockIntersects = blockGroup ? 
-                this.app.raycaster.intersectObjects(blockGroup.children, true) : [];
-            
-            // 检查是否击中当前层的方块
-            let hitCurrentLayerBlock = false;
-            if (blockIntersects.length > 0 && this.app.currentLayer > 0) {
-                const actualLayer = this.app.currentLayer - 1; // UI层级转为实际高度
-                for (let intersect of blockIntersects) {
-                    const block = intersect.object;
-                    if (block.userData && block.userData.gridPos && block.userData.gridPos.y === actualLayer) {
-                        const intersectPoint = intersect.point;
-                        const blockPos = block.position;
-                        
-                        const tolerance = 0.5;
-                        if (Math.abs(intersectPoint.x - blockPos.x) <= tolerance &&
-                            Math.abs(intersectPoint.y - blockPos.y) <= tolerance &&
-                            Math.abs(intersectPoint.z - blockPos.z) <= tolerance) {
-                            // 在无重力模式下，点击当前层方块不做任何操作（不在上方添加）
-                            hitCurrentLayerBlock = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            
-            // 如果没有击中当前层方块，则检测平面
-            if (!hitCurrentLayerBlock) {
-                const placeholderGroup = this.app.scenes.perspective.children.find(child => 
-                    child.type === 'Group' && child.children.length > 0 && 
-                    child.children[0].userData && child.children[0].userData.isGroundPlane
-                );
-                const planeIntersects = placeholderGroup ? 
-                    this.app.raycaster.intersectObjects(placeholderGroup.children, false) : [];
-                
-                if (planeIntersects.length > 0) {
-                    const intersectPoint = planeIntersects[0].point;
-                    const half = this.app.workspaceSize / 2;
-                    const gridX = Math.round(intersectPoint.x + half - 0.5);
-                    const gridZ = Math.round(intersectPoint.z + half - 0.5);
-                    
-                    if (gridX >= 0 && gridX < this.app.workspaceSize && gridZ >= 0 && gridZ < this.app.workspaceSize) {
-                        this.app.blockManager.addBlockAtXZ(gridX, gridZ);
-                    }
-                }
-            }
-        }
+        this.handleBlockInteraction('add');
     }
 
     onRightClick(event) {
         if (this.isDragging) return;
         this.setupRaycaster(event);
+        this.handleBlockInteraction('remove');
+    }
+
+    handleBlockInteraction(action) {
+        const blockGroup = this.findBlockGroup();
+        const blockIntersects = blockGroup ? 
+            this.app.raycaster.intersectObjects(blockGroup.children, true) : [];
         
         if (this.app.gravityMode) {
-            // 重力模式：原有逻辑
-            const blockGroup = this.app.scenes.perspective.children.find(child => 
-                child.type === 'Group' && child.children.some(c => c.userData && c.userData.gridPos && !c.userData.isGroundPlane)
-            );
-            const blockIntersects = blockGroup ? 
-                this.app.raycaster.intersectObjects(blockGroup.children, true) : [];
-            
-            if (blockIntersects.length > 0) {
-                for (let intersect of blockIntersects) {
-                    const block = intersect.object;
-                    if (block.userData && block.userData.gridPos) {
-                        const intersectPoint = intersect.point;
-                        const blockPos = block.position;
-                        
-                        const tolerance = 0.5;
-                        if (Math.abs(intersectPoint.x - blockPos.x) <= tolerance &&
-                            Math.abs(intersectPoint.y - blockPos.y) <= tolerance &&
-                            Math.abs(intersectPoint.z - blockPos.z) <= tolerance) {
-                            const gridPos = block.userData.gridPos;
-                            if (this.app.blockManager.isTopBlock(gridPos.x, gridPos.y, gridPos.z)) {
-                                this.app.blockManager.removeTopBlock(gridPos.x, gridPos.z);
-                            }
-                            return;
+            this.handleGravityModeInteraction(action, blockIntersects);
+        } else {
+            this.handleNoGravityModeInteraction(action, blockIntersects);
+        }
+    }
+
+    findBlockGroup() {
+        return this.app.scenes.perspective.children.find(child => 
+            child.type === 'Group' && child.children.some(c => 
+                c.userData && c.userData.gridPos && !c.userData.isGroundPlane
+            )
+        );
+    }
+
+    findPlaceholderGroup() {
+        return this.app.scenes.perspective.children.find(child => 
+            child.type === 'Group' && child.children.length > 0 && 
+            child.children[0].userData && child.children[0].userData.isGroundPlane
+        );
+    }
+
+    isPointInBlock(intersectPoint, blockPos, tolerance = 0.5) {
+        return Math.abs(intersectPoint.x - blockPos.x) <= tolerance &&
+               Math.abs(intersectPoint.y - blockPos.y) <= tolerance &&
+               Math.abs(intersectPoint.z - blockPos.z) <= tolerance;
+    }
+
+    getGridFromPlaneIntersect(intersectPoint) {
+        const half = this.app.workspaceSize / 2;
+        const gridX = Math.round(intersectPoint.x + half - 0.5);
+        const gridZ = Math.round(intersectPoint.z + half - 0.5);
+        
+        if (gridX >= 0 && gridX < this.app.workspaceSize && 
+            gridZ >= 0 && gridZ < this.app.workspaceSize) {
+            return { x: gridX, z: gridZ };
+        }
+        return null;
+    }
+
+    handleGravityModeInteraction(action, blockIntersects) {
+        // 先检查方块交互
+        if (blockIntersects.length > 0) {
+            for (let intersect of blockIntersects) {
+                const block = intersect.object;
+                if (block.userData && block.userData.gridPos) {
+                    if (this.isPointInBlock(intersect.point, block.position)) {
+                        const gridPos = block.userData.gridPos;
+                        if (action === 'add') {
+                            this.app.blockManager.addBlockAbove(gridPos.x, gridPos.y, gridPos.z);
+                        } else if (this.app.blockManager.isTopBlock(gridPos.x, gridPos.y, gridPos.z)) {
+                            this.app.blockManager.removeTopBlock(gridPos.x, gridPos.z);
                         }
+                        return;
                     }
                 }
             }
-        } else {
-            // 无重力模式：优先检测当前层方块，再检测平面
-            const blockGroup = this.app.scenes.perspective.children.find(child => 
-                child.type === 'Group' && child.children.some(c => c.userData && c.userData.gridPos && !c.userData.isGroundPlane)
-            );
-            const blockIntersects = blockGroup ? 
-                this.app.raycaster.intersectObjects(blockGroup.children, true) : [];
+        }
+        
+        // 再检查平面交互（只有添加操作才检查平面）
+        if (action === 'add') {
+            const placeholderGroup = this.findPlaceholderGroup();
+            const planeIntersects = placeholderGroup ? 
+                this.app.raycaster.intersectObjects(placeholderGroup.children, false) : [];
             
-            // 只检查是否击中当前层的方块并删除
-            if (blockIntersects.length > 0 && this.app.currentLayer > 0) {
-                const actualLayer = this.app.currentLayer - 1; // UI层级转为实际高度
-                for (let intersect of blockIntersects) {
-                    const block = intersect.object;
-                    if (block.userData && block.userData.gridPos && block.userData.gridPos.y === actualLayer) {
-                        const intersectPoint = intersect.point;
-                        const blockPos = block.position;
-                        
-                        const tolerance = 0.5;
-                        if (Math.abs(intersectPoint.x - blockPos.x) <= tolerance &&
-                            Math.abs(intersectPoint.y - blockPos.y) <= tolerance &&
-                            Math.abs(intersectPoint.z - blockPos.z) <= tolerance) {
-                            const gridPos = block.userData.gridPos;
+            if (planeIntersects.length > 0) {
+                const gridPos = this.getGridFromPlaneIntersect(planeIntersects[0].point);
+                if (gridPos) {
+                    this.app.blockManager.addBlockAtXZ(gridPos.x, gridPos.z);
+                }
+            }
+        }
+    }
+
+    handleNoGravityModeInteraction(action, blockIntersects) {
+        if (blockIntersects.length > 0 && this.app.currentLayer > 0) {
+            const actualLayer = this.app.currentLayer - 1;
+            
+            for (let intersect of blockIntersects) {
+                const block = intersect.object;
+                if (block.userData && block.userData.gridPos && 
+                    block.userData.gridPos.y === actualLayer) {
+                    
+                    if (this.isPointInBlock(intersect.point, block.position)) {
+                        const gridPos = block.userData.gridPos;
+                        if (action === 'remove') {
                             this.app.blockManager.removeBlockAtLayer(gridPos.x, gridPos.y, gridPos.z);
-                            break;
                         }
+                        // 添加操作下点击当前层方块不做任何操作
+                        return;
                     }
+                }
+            }
+        }
+        
+        // 没有击中当前层方块，检查平面（只有添加操作）
+        if (action === 'add') {
+            const placeholderGroup = this.findPlaceholderGroup();
+            const planeIntersects = placeholderGroup ? 
+                this.app.raycaster.intersectObjects(placeholderGroup.children, false) : [];
+            
+            if (planeIntersects.length > 0) {
+                const gridPos = this.getGridFromPlaneIntersect(planeIntersects[0].point);
+                if (gridPos) {
+                    this.app.blockManager.addBlockAtXZ(gridPos.x, gridPos.z);
                 }
             }
         }

@@ -80,35 +80,39 @@
         <div class="left-sidebar">
             <div class="controls">
                 <div style="margin-bottom: 10px;">
-                    <div style="font-size: 12px; margin-bottom: 5px; color: #666;">工作空间大小:</div>
-                    <select id="workspace-size" onchange="app.changeWorkspaceSize(this.value)" style="width: 100%; padding: 5px; margin-bottom: 8px;">
-                        <option value="3">3×3×3</option>
-                        <option value="4">4×4×4</option>
-                        <option value="5" selected>5×5×5</option>
-                        <option value="6">6×6×6</option>
-                        <option value="7">7×7×7</option>
-                        <option value="8">8×8×8</option>
-                        <option value="9">9×9×9</option>
-                    </select>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <div style="font-size: 14px; color: #666; white-space: nowrap;">工作空间:</div>
+                        <select id="workspace-size" onchange="app.changeWorkspaceSize(this.value)" style="flex: 1; padding: 5px;">
+                            <option value="3">3×3×3</option>
+                            <option value="4">4×4×4</option>
+                            <option value="5" selected>5×5×5</option>
+                            <option value="6">6×6×6</option>
+                            <option value="7">7×7×7</option>
+                            <option value="8">8×8×8</option>
+                            <option value="9">9×9×9</option>
+                        </select>
+                    </div>
                     <div style="display: flex; gap: 5px;">
                         <button id="free-mode-btn" onclick="app.setFreeMode()" style="padding: 8px 15px; font-size: 14px; background: #007cba;">自由探索</button>
                         <button id="level-mode-btn" onclick="app.setLevelMode()" style="padding: 8px 15px; font-size: 14px;">关卡生成</button>
                     </div>
-                    <div style="display: flex; gap: 5px; margin-top: 8px;">
-                        <button id="gravity-mode-btn" onclick="app.setGravityMode(true)" style="padding: 6px 12px; font-size: 12px; background: #007cba;">重力感应</button>
-                        <button id="no-gravity-mode-btn" onclick="app.setGravityMode(false)" style="padding: 6px 12px; font-size: 12px;">无重力感应</button>
-                    </div>
-                    <div style="margin-top: 8px;">
-                        <div style="font-size: 12px; margin-bottom: 5px; color: #666;">渲染样式:</div>
-                        <div style="display: flex; gap: 3px;">
-                            <button id="solid-render-btn" onclick="app.setRenderMode('solid')" style="padding: 4px 8px; font-size: 11px; background: #007cba;">实心</button>
-                            <button id="wireframe-render-btn" onclick="app.setRenderMode('wireframe')" style="padding: 4px 8px; font-size: 11px;">线框</button>
-                            <button id="transparent-render-btn" onclick="app.setRenderMode('transparent')" style="padding: 4px 8px; font-size: 11px;">透明</button>
+                    <div id="level-type-control" style="display: none; margin-top: 8px;">
+                        <div style="display: flex; gap: 5px;">
+                            <button id="normal-level-btn" onclick="app.setLevelType('normal')" style="padding: 8px 15px; font-size: 14px; background: #007cba;">普通模式</button>
+                            <button id="color-level-btn" onclick="app.setLevelType('color')" style="padding: 8px 15px; font-size: 14px;">颜色模式</button>
                         </div>
                     </div>
+                    <div style="display: flex; gap: 5px; margin-top: 8px;">
+                        <button id="gravity-toggle-btn" onclick="app.toggleGravityMode()" style="padding: 8px 15px; font-size: 14px; background: #007cba;">重力生效</button>
+                        <button id="render-toggle-btn" onclick="app.toggleRenderMode()" style="padding: 8px 15px; font-size: 14px; background: #007cba;">实心方块</button>
+                    </div>
+                    <div id="color-picker-control" style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+                        <div style="font-size: 12px; color: #666; white-space: nowrap;">方块颜色:</div>
+                        <input type="color" id="block-color" value="#4CAF50" onchange="app.setBlockColor(this.value)" style="width: 40px; height: 30px; border: none; border-radius: 4px; cursor: pointer;">
+                    </div>
                     <div id="layer-control" style="margin-top: 8px; display: none;">
-                        <div style="font-size: 12px; margin-bottom: 5px; color: #666;">当前层级:</div>
-                        <div style="display: flex; align-items: center; gap: 5px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="font-size: 12px; color: #666; white-space: nowrap;">当前层级:</div>
                             <button onclick="app.changeLayer(-1)" style="padding: 4px 8px; font-size: 12px;">-</button>
                             <span id="current-layer" style="min-width: 20px; text-align: center;">0</span>
                             <button onclick="app.changeLayer(1)" style="padding: 4px 8px; font-size: 12px;">+</button>
@@ -138,18 +142,17 @@
                     </div>
                 </div>
                 <div style="font-size: 12px; color: #666;">
-                    <div>左键: 添加方块</div>
-                    <div>右键: 删除方块</div>
-                    <div>拖拽: 旋转视角</div>
-                    <div>滚轮: 缩放</div>
-                    <div>WASD: 前后左右移动</div>
-                    <div>↑↓: 上下移动</div>
-                    <div>←→: 绕中心旋转</div>
+                    <div>左键: 添加方块  右键: 删除方块</div>
+                    <div>拖拽: 旋转视角  滚轮: 缩放</div>
                     <div style="margin-top: 8px; border-top: 1px solid #ddd; padding-top: 8px;">
                         <div><strong>快捷键:</strong></div>
+                        <div>WASD: 前后左右移动</div>
+                        <div>+/ -: 增减图层</div>
+                        <div>↑↓: 上下移动</div>
+                        <div>←→: 绕中心旋转</div>
                         <div>3-9: 工作空间大小</div>
-                        <div>T/B/F/K/L/R: 标准视图</div>
-                        <div>1/2/Q/E/U/I/O/P: 角视图</div>
+                        <div>T/ B/ F/ K/ L/ R: 标准视图</div>
+                        <div>1/ 2/ Q/ E/ U/ I/ O/ P: 角视图</div>
                         <div>C: 清空工作区</div>
                     </div>
                 </div>
@@ -178,6 +181,9 @@
     <script src="js/workspace-builder.js"></script>
     <script src="js/block-manager.js"></script>
     <script src="js/interaction-handler.js"></script>
+    <script src="js/levels/level-generator.js"></script>
+    <script src="js/levels/level-renderer.js"></script>
+    <script src="js/levels/level-validator.js"></script>
     <script src="js/level-manager.js"></script>
     <script src="js/ui-manager.js"></script>
     <script src="js/main.js"></script>

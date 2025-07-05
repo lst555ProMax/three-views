@@ -22,66 +22,131 @@ class LevelManager {
 
     generateRandomModel() {
         const size = this.app.workspaceSize;
-        const model = [];
         
-        for (let x = 0; x < size; x++) {
-            model[x] = [];
-            for (let z = 0; z < size; z++) {
-                let height = 0;
-                const rand = Math.random();
-                if (rand < 0.25) {
-                    height = 0;
-                } else {
-                    // 指数分布：缓慢下降，低高度概率更大
-                    const exponential = -Math.log(Math.random()) * 0.99;
-                    height = Math.min(size, Math.floor(exponential) + 1);
+        if (this.app.gravityMode) {
+            // 重力模式：生成高度模型
+            const model = [];
+            for (let x = 0; x < size; x++) {
+                model[x] = [];
+                for (let z = 0; z < size; z++) {
+                    let height = 0;
+                    const rand = Math.random();
+                    if (rand < 0.25) {
+                        height = 0;
+                    } else {
+                        // 指数分布：缓慢下降，低高度概率更大
+                        const exponential = -Math.log(Math.random()) * 0.99;
+                        height = Math.min(size, Math.floor(exponential) + 1);
+                    }
+                    model[x][z] = height;
                 }
-                model[x][z] = height;
             }
+            return model;
+        } else {
+            // 无重力模式：生成三维模型，概率为 1/workspace
+            const model = [];
+            const probability = 1 / size;
+            for (let x = 0; x < size; x++) {
+                model[x] = [];
+                for (let y = 0; y < size; y++) {
+                    model[x][y] = [];
+                    for (let z = 0; z < size; z++) {
+                        model[x][y][z] = Math.random() < probability;
+                    }
+                }
+            }
+            return model;
         }
-        
-        return model;
     }
 
     generateTargetViews() {
         const size = this.app.workspaceSize;
         const views = { front: [], side: [], top: [] };
 
-        // 正视图 (X-Y)
-        for (let y = size - 1; y >= 0; y--) {
-            views.front[size - 1 - y] = [];
-            for (let x = 0; x < size; x++) {
-                let hasBlock = false;
-                for (let z = 0; z < size; z++) {
-                    if (this.targetModel[x][z] > y) {
-                        hasBlock = true;
-                        break;
-                    }
-                }
-                views.front[size - 1 - y][x] = hasBlock;
-            }
-        }
-
-        // 右视图 (Z-Y，从右侧看)
-        for (let y = size - 1; y >= 0; y--) {
-            views.side[size - 1 - y] = [];
-            for (let z = size - 1; z >= 0; z--) {
-                let hasBlock = false;
+        if (this.app.gravityMode) {
+            // 重力模式：从高度模型生成视图
+            // 正视图 (X-Y)
+            for (let y = size - 1; y >= 0; y--) {
+                views.front[size - 1 - y] = [];
                 for (let x = 0; x < size; x++) {
-                    if (this.targetModel[x][z] > y) {
-                        hasBlock = true;
-                        break;
+                    let hasBlock = false;
+                    for (let z = 0; z < size; z++) {
+                        if (this.targetModel[x][z] > y) {
+                            hasBlock = true;
+                            break;
+                        }
                     }
+                    views.front[size - 1 - y][x] = hasBlock;
                 }
-                views.side[size - 1 - y][size - 1 - z] = hasBlock;
             }
-        }
 
-        // 俯视图 (X-Z)
-        for (let z = 0; z < size; z++) {
-            views.top[z] = [];
-            for (let x = 0; x < size; x++) {
-                views.top[z][x] = this.targetModel[x][z] > 0;
+            // 右视图 (Z-Y，从右侧看)
+            for (let y = size - 1; y >= 0; y--) {
+                views.side[size - 1 - y] = [];
+                for (let z = size - 1; z >= 0; z--) {
+                    let hasBlock = false;
+                    for (let x = 0; x < size; x++) {
+                        if (this.targetModel[x][z] > y) {
+                            hasBlock = true;
+                            break;
+                        }
+                    }
+                    views.side[size - 1 - y][size - 1 - z] = hasBlock;
+                }
+            }
+
+            // 俯视图 (X-Z)
+            for (let z = 0; z < size; z++) {
+                views.top[z] = [];
+                for (let x = 0; x < size; x++) {
+                    views.top[z][x] = this.targetModel[x][z] > 0;
+                }
+            }
+        } else {
+            // 无重力模式：从三维模型生成视图
+            // 正视图 (X-Y)
+            for (let y = size - 1; y >= 0; y--) {
+                views.front[size - 1 - y] = [];
+                for (let x = 0; x < size; x++) {
+                    let hasBlock = false;
+                    for (let z = 0; z < size; z++) {
+                        if (this.targetModel[x][y][z]) {
+                            hasBlock = true;
+                            break;
+                        }
+                    }
+                    views.front[size - 1 - y][x] = hasBlock;
+                }
+            }
+
+            // 右视图 (Z-Y，从右侧看)
+            for (let y = size - 1; y >= 0; y--) {
+                views.side[size - 1 - y] = [];
+                for (let z = size - 1; z >= 0; z--) {
+                    let hasBlock = false;
+                    for (let x = 0; x < size; x++) {
+                        if (this.targetModel[x][y][z]) {
+                            hasBlock = true;
+                            break;
+                        }
+                    }
+                    views.side[size - 1 - y][size - 1 - z] = hasBlock;
+                }
+            }
+
+            // 俯视图 (X-Z)
+            for (let z = 0; z < size; z++) {
+                views.top[z] = [];
+                for (let x = 0; x < size; x++) {
+                    let hasBlock = false;
+                    for (let y = 0; y < size; y++) {
+                        if (this.targetModel[x][y][z]) {
+                            hasBlock = true;
+                            break;
+                        }
+                    }
+                    views.top[z][x] = hasBlock;
+                }
             }
         }
 
@@ -249,7 +314,9 @@ class LevelManager {
         if (this.isLevelMode) {
             this.updateLevelViews();
             if (this.checkCompletion()) {
-                alert('恭喜！关卡完成！');
+                setTimeout(() => {
+                    alert('恭喜！关卡完成！');
+                }, 100);
             }
         }
     }

@@ -98,6 +98,14 @@
                         <button id="gravity-mode-btn" onclick="app.setGravityMode(true)" style="padding: 6px 12px; font-size: 12px; background: #007cba;">重力感应</button>
                         <button id="no-gravity-mode-btn" onclick="app.setGravityMode(false)" style="padding: 6px 12px; font-size: 12px;">无重力感应</button>
                     </div>
+                    <div style="margin-top: 8px;">
+                        <div style="font-size: 12px; margin-bottom: 5px; color: #666;">渲染样式:</div>
+                        <div style="display: flex; gap: 3px;">
+                            <button id="solid-render-btn" onclick="app.setRenderMode('solid')" style="padding: 4px 8px; font-size: 11px; background: #007cba;">实心</button>
+                            <button id="wireframe-render-btn" onclick="app.setRenderMode('wireframe')" style="padding: 4px 8px; font-size: 11px;">线框</button>
+                            <button id="transparent-render-btn" onclick="app.setRenderMode('transparent')" style="padding: 4px 8px; font-size: 11px;">透明</button>
+                        </div>
+                    </div>
                     <div id="layer-control" style="margin-top: 8px; display: none;">
                         <div style="font-size: 12px; margin-bottom: 5px; color: #666;">当前层级:</div>
                         <div style="display: flex; align-items: center; gap: 5px;">

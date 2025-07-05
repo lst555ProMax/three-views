@@ -43,11 +43,11 @@ class SceneManager {
     addToAllScenes() {
         Object.keys(this.app.scenes).forEach(viewName => {
             this.app.scenes[viewName].add(this.app.gridLines.clone()); // 增加的是副本
-            this.app.scenes[viewName].add(this.app.placeholders.clone());
-            this.app.scenes[viewName].add(this.app.blocks.clone());
             if (viewName === 'perspective') {
+                this.app.scenes[viewName].add(this.app.placeholders.clone());
                 this.app.scenes[viewName].add(this.app.axisHelper.clone());
             }
+            this.app.scenes[viewName].add(this.app.blocks.clone());
         });
     }
 
@@ -70,8 +70,10 @@ class SceneManager {
                 child.type === 'Group' && child.children.some(c => c.userData && c.userData.isGroundPlane)
             );
             oldPlaceholders.forEach(group => this.app.scenes[viewName].remove(group));
-            // 添加新的占位符组
-            this.app.scenes[viewName].add(this.app.placeholders.clone());
+            // 只在透视图中添加占位符
+            if (viewName === 'perspective') {
+                this.app.scenes[viewName].add(this.app.placeholders.clone());
+            }
         });
     }
 

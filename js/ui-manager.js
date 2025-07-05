@@ -41,6 +41,7 @@ class UIManager {
         this.updateModeButtons('free');
         this.updateGravityButtons(true);
         this.updateLayerControl(true);
+        this.updateRenderButtons('solid');
     }
 
     updateViewLabelsForMode(isLevelMode) {
@@ -73,5 +74,23 @@ class UIManager {
     updateCurrentLayer(layer) {
         const currentLayerSpan = document.getElementById('current-layer');
         currentLayerSpan.textContent = layer;
+    }
+
+    updateRenderButtons(activeMode) {
+        const solidBtn = document.getElementById('solid-render-btn');
+        const wireframeBtn = document.getElementById('wireframe-render-btn');
+        const transparentBtn = document.getElementById('transparent-render-btn');
+        
+        [solidBtn, wireframeBtn, transparentBtn].forEach(btn => {
+            if (btn) btn.style.background = '#ccc';
+        });
+        
+        if (activeMode === 'solid' && solidBtn) {
+            solidBtn.style.background = '#007cba';
+        } else if (activeMode === 'wireframe' && wireframeBtn) {
+            wireframeBtn.style.background = '#ff9800';
+        } else if (activeMode === 'transparent' && transparentBtn) {
+            transparentBtn.style.background = '#9c27b0';
+        }
     }
 }

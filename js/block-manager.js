@@ -19,19 +19,39 @@ class BlockManager {
     // 直接创建方块
     createBlockDirect(x, y, z) {
         const worldPos = this.gridToWorld({x, y, z});
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
         
-        // 创建方块几何体和材质
-        const geometry = new THREE.BoxGeometry(1, 1, 1); // 几何体
-        const material = new THREE.MeshLambertMaterial({ color: 0x4CAF50 });  // 材质
-        const cube = new THREE.Mesh(geometry, material);
+        let material, cube;
         
-        // 创建边框线
-        const edges = new THREE.EdgesGeometry(geometry);
-        const wireframe = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
+        if (this.app.renderMode === 'wireframe') {
+            // 线框模式：显示边框 + 不可见碰撞体
+            const edges = new THREE.EdgesGeometry(geometry);
+            const wireframe = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x4CAF50, linewidth: 2 }));
+            // 创建不可见的碰撞体用于射线检测
+            const invisibleMaterial = new THREE.MeshBasicMaterial({ visible: false });
+            cube = new THREE.Mesh(geometry, invisibleMaterial);
+            cube.add(wireframe);
+        } else if (this.app.renderMode === 'transparent') {
+            // 透明模式：半透明实体
+            material = new THREE.MeshLambertMaterial({ 
+                color: 0x4CAF50, 
+                transparent: true, 
+                opacity: 0.5 
+            });
+            cube = new THREE.Mesh(geometry, material);
+            const edges = new THREE.EdgesGeometry(geometry);
+            const wireframe = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x2E7D32 }));
+            cube.add(wireframe);
+        } else {
+            // 实体模式：默认模式
+            material = new THREE.MeshLambertMaterial({ color: 0x4CAF50 });
+            cube = new THREE.Mesh(geometry, material);
+            const edges = new THREE.EdgesGeometry(geometry);
+            const wireframe = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
+            cube.add(wireframe);
+        }
         
-        // 设置位置和属性
         cube.position.set(worldPos.x, worldPos.y, worldPos.z);
-        cube.add(wireframe);
         cube.userData = { gridPos: {x, y, z} };
         
         this.app.blocks.add(cube);
@@ -39,6 +59,16 @@ class BlockManager {
 
     // 完整创建流程
     createBlock(x, y, z) {
+        // 双重检查：数据层和视图层都不存在才创建
+        if (this.app.workspace[x][y][z]) return;
+        const existingBlock = this.app.blocks.children.find(child => 
+            child.userData.gridPos && 
+            child.userData.gridPos.x === x &&
+            child.userData.gridPos.y === y &&
+            child.userData.gridPos.z === z
+        );
+        if (existingBlock) return;
+        
         this.app.historyManager.saveState();   // 保存历史状态（回退重做）
         this.app.workspace[x][y][z] = true;  // 更新数据状态（数据层）
         this.createBlockDirect(x, y, z);  // 创建3D对象 （视图层）
@@ -50,30 +80,35 @@ class BlockManager {
         if (this.app.gravityMode) {
             this.createBlock(x, 0, z);
         } else {
-            this.addBlockAtLayer(x, this.app.currentLayer, z);
+            // 无重力模式：第0层不能编辑，其他层级UI层级-1为实际高度
+            if (this.app.currentLayer > 0) {
+                this.addBlockAtLayer(x, this.app.currentLayer - 1, z);
+            }
         }
     }
 
     addBlockAtLayer(x, y, z) {
-        if (this.app.workspace[x][y][z]) return;
         this.createBlock(x, y, z);
     }
 
     removeBlockAtLayer(x, y, z) {
-        if (!this.app.workspace[x][y][z]) return;
-        
+        // 强制删除：无论数据层状态如何，都清理该位置的所有方块
         this.app.historyManager.saveState();
         this.app.workspace[x][y][z] = false;
         
-        const blockToRemove = this.app.blocks.children.find(child => 
+        // 删除所有相同位置的方块（防止重复方块）
+        const blocksToRemove = this.app.blocks.children.filter(child => 
             child.userData.gridPos && 
             child.userData.gridPos.x === x &&
             child.userData.gridPos.y === y &&
             child.userData.gridPos.z === z
         );
         
-        if (blockToRemove) {
-            this.app.blocks.remove(blockToRemove);
+        blocksToRemove.forEach(block => {
+            this.app.blocks.remove(block);
+        });
+        
+        if (blocksToRemove.length > 0) {
             this.app.sceneManager.updateAllScenes();
             this.app.levelManager.onBlockChange();
         }
@@ -134,5 +169,15 @@ class BlockManager {
 
     createWorkspaceArray(size) {
         return new Array(size).fill().map(() => new Array(size).fill().map(() => new Array(size).fill(false)));
+    }
+
+    updateAllBlocksRender() {
+        const blocks = [...this.app.blocks.children];
+        blocks.forEach(block => {
+            const gridPos = block.userData.gridPos;
+            this.app.blocks.remove(block);
+            this.createBlockDirect(gridPos.x, gridPos.y, gridPos.z);
+        });
+        this.app.sceneManager.updateAllScenes();
     }
 }

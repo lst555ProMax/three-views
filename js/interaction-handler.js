@@ -107,11 +107,11 @@ class InteractionHandler {
                         break;
                     case 'ArrowLeft':
                         event.preventDefault();
-                        this.app.cameraManager.rotateAroundCenter('counterclockwise');
+                        this.app.cameraManager.rotateAroundCenter('clockwise');
                         break;
                     case 'ArrowRight':
                         event.preventDefault();
-                        this.app.cameraManager.rotateAroundCenter('clockwise');
+                        this.app.cameraManager.rotateAroundCenter('counterclockwise');
                         break;
                     // 数字键 - 工作空间大小
                     case '3':
@@ -225,6 +225,17 @@ class InteractionHandler {
                         event.preventDefault();
                         this.app.clearWorkspace();
                         break;
+                    // 层级切换
+                    case '+':
+                    case '=':
+                        event.preventDefault();
+                        this.app.changeLayer(1);
+                        break;
+                    case '-':
+                    case '_':
+                        event.preventDefault();
+                        this.app.changeLayer(-1);
+                        break;
                 }
             }
         });
@@ -307,10 +318,11 @@ class InteractionHandler {
             
             // 检查是否击中当前层的方块
             let hitCurrentLayerBlock = false;
-            if (blockIntersects.length > 0) {
+            if (blockIntersects.length > 0 && this.app.currentLayer > 0) {
+                const actualLayer = this.app.currentLayer - 1; // UI层级转为实际高度
                 for (let intersect of blockIntersects) {
                     const block = intersect.object;
-                    if (block.userData && block.userData.gridPos && block.userData.gridPos.y === this.app.currentLayer) {
+                    if (block.userData && block.userData.gridPos && block.userData.gridPos.y === actualLayer) {
                         const intersectPoint = intersect.point;
                         const blockPos = block.position;
                         
@@ -390,10 +402,11 @@ class InteractionHandler {
                 this.app.raycaster.intersectObjects(blockGroup.children, true) : [];
             
             // 只检查是否击中当前层的方块并删除
-            if (blockIntersects.length > 0) {
+            if (blockIntersects.length > 0 && this.app.currentLayer > 0) {
+                const actualLayer = this.app.currentLayer - 1; // UI层级转为实际高度
                 for (let intersect of blockIntersects) {
                     const block = intersect.object;
-                    if (block.userData && block.userData.gridPos && block.userData.gridPos.y === this.app.currentLayer) {
+                    if (block.userData && block.userData.gridPos && block.userData.gridPos.y === actualLayer) {
                         const intersectPoint = intersect.point;
                         const blockPos = block.position;
                         

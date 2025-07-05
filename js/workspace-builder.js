@@ -71,21 +71,72 @@ class WorkspaceBuilder {
 
     createPlaceholders() {
         this.app.placeholders = new THREE.Group();
+        this.updatePlaceholders();
+    }
+
+    updatePlaceholders() {
+        this.app.placeholders.clear();
         
-        const planeGeometry = new THREE.PlaneGeometry(this.app.workspaceSize, this.app.workspaceSize);
-        const planeMaterial = new THREE.MeshBasicMaterial({ 
-            transparent: true, 
-            opacity: 0,  //  完全透明
-            visible: false,
-            side: THREE.DoubleSide  //  双面检测，从上下都能点击
-        });
+        if (this.app.gravityMode) {
+            // 重力模式：只有底面平面
+            const planeGeometry = new THREE.PlaneGeometry(this.app.workspaceSize, this.app.workspaceSize);
+            const planeMaterial = new THREE.MeshBasicMaterial({ 
+                transparent: true, 
+                opacity: 0,
+                side: THREE.DoubleSide
+            });
+            const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+            plane.rotation.x = -Math.PI / 2;
+            plane.position.set(0, -this.app.workspaceSize / 2, 0);
+            plane.userData = { isGroundPlane: true, layer: 0 };
+            this.app.placeholders.add(plane);
+        } else {
+            // 无重力模式：只为当前层创建平面
+            const y = this.app.currentLayer;
+            const planeGeometry = new THREE.PlaneGeometry(this.app.workspaceSize, this.app.workspaceSize);
+            const planeMaterial = new THREE.MeshBasicMaterial({ 
+                transparent: true, 
+                opacity: 0.1,
+                color: 0x0066ff,
+                side: THREE.DoubleSide
+            });
+            
+            const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+            plane.rotation.x = -Math.PI / 2;
+            const worldY = y - this.app.workspaceSize / 2;
+            plane.position.set(0, worldY, 0);
+            plane.userData = { isGroundPlane: true, layer: y };
+            
+            // 为当前层平面添加网格线
+            const gridGroup = new THREE.Group();
+            const gridMaterial = new THREE.LineBasicMaterial({ 
+                color: 0x0066ff, 
+                opacity: 0.3, 
+                transparent: true 
+            });
+            
+            const half = this.app.workspaceSize / 2;
+            // 水平网格线
+            for (let x = 0; x <= this.app.workspaceSize; x++) {
+                const geometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(x - half, worldY, -half),
+                    new THREE.Vector3(x - half, worldY, half)
+                ]);
+                gridGroup.add(new THREE.Line(geometry, gridMaterial));
+            }
+            for (let z = 0; z <= this.app.workspaceSize; z++) {
+                const geometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(-half, worldY, z - half),
+                    new THREE.Vector3(half, worldY, z - half)
+                ]);
+                gridGroup.add(new THREE.Line(geometry, gridMaterial));
+            }
+            
+            this.app.placeholders.add(plane);
+            this.app.placeholders.add(gridGroup);
+        }
         
-        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-        plane.rotation.x = -Math.PI / 2;  //  旋转90°，从垂直变为水平
-        plane.position.set(0, -this.app.workspaceSize / 2, 0);  //  放在三维立体底部
-        plane.userData = { isGroundPlane: true };  // ?标记为地面平面
-        
-        this.app.placeholders.add(plane);
+        this.app.sceneManager.updatePlaceholders();
     }
 
     createAxisHelper() {

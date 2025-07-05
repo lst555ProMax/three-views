@@ -47,7 +47,36 @@ class BlockManager {
     }
 
     addBlockAtXZ(x, z) {
-        this.createBlock(x, 0, z);
+        if (this.app.gravityMode) {
+            this.createBlock(x, 0, z);
+        } else {
+            this.addBlockAtLayer(x, this.app.currentLayer, z);
+        }
+    }
+
+    addBlockAtLayer(x, y, z) {
+        if (this.app.workspace[x][y][z]) return;
+        this.createBlock(x, y, z);
+    }
+
+    removeBlockAtLayer(x, y, z) {
+        if (!this.app.workspace[x][y][z]) return;
+        
+        this.app.historyManager.saveState();
+        this.app.workspace[x][y][z] = false;
+        
+        const blockToRemove = this.app.blocks.children.find(child => 
+            child.userData.gridPos && 
+            child.userData.gridPos.x === x &&
+            child.userData.gridPos.y === y &&
+            child.userData.gridPos.z === z
+        );
+        
+        if (blockToRemove) {
+            this.app.blocks.remove(blockToRemove);
+            this.app.sceneManager.updateAllScenes();
+            this.app.levelManager.onBlockChange();
+        }
     }
 
     // 在现有方块上添加

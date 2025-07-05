@@ -39,11 +39,39 @@ class UIManager {
         this.updateViewLabel('side', 'right');
         this.updateViewLabel('top', 'top');
         this.updateModeButtons('free');
+        this.updateGravityButtons(true);
+        this.updateLayerControl(true);
     }
 
     updateViewLabelsForMode(isLevelMode) {
         this.updateViewLabel('front', this.app.orthographicViews.front, isLevelMode);
         this.updateViewLabel('side', this.app.orthographicViews.side, isLevelMode);
         this.updateViewLabel('top', this.app.orthographicViews.top, isLevelMode);
+    }
+
+    updateGravityButtons(gravityMode) {
+        const gravityBtn = document.getElementById('gravity-mode-btn');
+        const noGravityBtn = document.getElementById('no-gravity-mode-btn');
+        
+        if (gravityMode) {
+            gravityBtn.style.background = '#007cba';
+            noGravityBtn.style.background = '#ccc';
+        } else {
+            gravityBtn.style.background = '#ccc';
+            noGravityBtn.style.background = '#ff9800';
+        }
+    }
+
+    updateLayerControl(gravityMode) {
+        const layerControl = document.getElementById('layer-control');
+        layerControl.style.display = gravityMode ? 'none' : 'block';
+        if (!gravityMode) {
+            this.updateCurrentLayer(0);
+        }
+    }
+
+    updateCurrentLayer(layer) {
+        const currentLayerSpan = document.getElementById('current-layer');
+        currentLayerSpan.textContent = layer;
     }
 }

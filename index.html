@@ -94,6 +94,18 @@
                         <button id="free-mode-btn" onclick="app.setFreeMode()" style="padding: 8px 15px; font-size: 14px; background: #007cba;">自由探索</button>
                         <button id="level-mode-btn" onclick="app.setLevelMode()" style="padding: 8px 15px; font-size: 14px;">关卡生成</button>
                     </div>
+                    <div style="display: flex; gap: 5px; margin-top: 8px;">
+                        <button id="gravity-mode-btn" onclick="app.setGravityMode(true)" style="padding: 6px 12px; font-size: 12px; background: #007cba;">重力感应</button>
+                        <button id="no-gravity-mode-btn" onclick="app.setGravityMode(false)" style="padding: 6px 12px; font-size: 12px;">无重力感应</button>
+                    </div>
+                    <div id="layer-control" style="margin-top: 8px; display: none;">
+                        <div style="font-size: 12px; margin-bottom: 5px; color: #666;">当前层级:</div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <button onclick="app.changeLayer(-1)" style="padding: 4px 8px; font-size: 12px;">-</button>
+                            <span id="current-layer" style="min-width: 20px; text-align: center;">0</span>
+                            <button onclick="app.changeLayer(1)" style="padding: 4px 8px; font-size: 12px;">+</button>
+                        </div>
+                    </div>
                 </div>
                 <div style="margin-bottom: 10px; border-top: 1px solid #ddd; padding-top: 10px;">
                     <div style="font-size: 12px; margin-bottom: 5px; color: #666;">标准视图:</div>

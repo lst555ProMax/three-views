@@ -63,6 +63,18 @@ class SceneManager {
         });
     }
 
+    updatePlaceholders() {
+        Object.keys(this.app.scenes).forEach(viewName => {
+            // 移除旧的占位符组
+            const oldPlaceholders = this.app.scenes[viewName].children.filter(child => 
+                child.type === 'Group' && child.children.some(c => c.userData && c.userData.isGroundPlane)
+            );
+            oldPlaceholders.forEach(group => this.app.scenes[viewName].remove(group));
+            // 添加新的占位符组
+            this.app.scenes[viewName].add(this.app.placeholders.clone());
+        });
+    }
+
     clearAllScenes() {
         Object.keys(this.app.scenes).forEach(viewName => {
             this.app.scenes[viewName].clear();

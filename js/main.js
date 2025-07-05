@@ -15,6 +15,10 @@ class ThreeViewsApp {
         this.workspace = this.createWorkspaceArray(this.workspaceSize);
         this.blocks = new THREE.Group();
         
+        // 重力模式
+        this.gravityMode = true;
+        this.currentLayer = 0;
+        
         // 正交视图状态
         this.orthographicViews = {
             front: 'front',
@@ -103,6 +107,25 @@ class ThreeViewsApp {
         this.levelManager.generateLevel();
         this.uiManager.updateModeButtons('level');
         this.uiManager.updateViewLabelsForMode(true);
+    }
+
+    setGravityMode(enabled) {
+        this.gravityMode = enabled;
+        this.currentLayer = 0;
+        this.uiManager.updateGravityButtons(enabled);
+        this.uiManager.updateLayerControl(enabled);
+        this.workspaceBuilder.updatePlaceholders();
+    }
+
+    changeLayer(delta) {
+        if (!this.gravityMode) {
+            const newLayer = Math.max(0, Math.min(this.workspaceSize - 1, this.currentLayer + delta));
+            if (newLayer !== this.currentLayer) {
+                this.currentLayer = newLayer;
+                this.uiManager.updateCurrentLayer(this.currentLayer);
+                this.workspaceBuilder.updatePlaceholders();
+            }
+        }
     }
 
 

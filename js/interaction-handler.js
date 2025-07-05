@@ -8,15 +8,18 @@ class InteractionHandler {
         this.previousMousePosition = { x: 0, y: 0 };
     }
 
+    //  设置所有事件监听器
     setupControls() {
         const canvas = this.app.renderers.perspective.domElement;
         
+        //  click是一次完整的点击 并且无拖拽
         canvas.addEventListener('click', (event) => {
             if (!this.isDragging) {
                 this.onMouseClick(event);
             }
         });
         
+        //  鼠标右键点击并且无拖拽
         canvas.addEventListener('contextmenu', (event) => {
             event.preventDefault();
             if (!this.isDragging) {
@@ -24,6 +27,7 @@ class InteractionHandler {
             }
         });
         
+        //  鼠标按下
         canvas.addEventListener('mousedown', (event) => {
             if (event.button === 0) {
                 this.isDragging = false;
@@ -31,6 +35,7 @@ class InteractionHandler {
             }
         });
         
+        //  鼠标移动
         canvas.addEventListener('mousemove', (event) => {
             if (event.buttons === 1) {
                 const deltaMove = {
@@ -47,15 +52,18 @@ class InteractionHandler {
             }
         });
         
+        //  鼠标松开
         canvas.addEventListener('mouseup', () => {
             setTimeout(() => { this.isDragging = false; }, 100);
         });
         
+        //  鼠标滚轮
         canvas.addEventListener('wheel', (event) => {
             event.preventDefault();
             this.app.cameraManager.zoomCamera(event.deltaY * 0.001);
         });
         
+        //  键盘操作
         document.addEventListener('keydown', (event) => {
             if (event.ctrlKey && event.key === 'z' && !event.shiftKey) {
                 event.preventDefault();
@@ -233,6 +241,7 @@ class InteractionHandler {
         window.addEventListener('resize', () => this.app.cameraManager.onWindowResize());
     }
 
+    //  设置射线
     setupRaycaster(event) {
         const rect = this.app.renderers.perspective.domElement.getBoundingClientRect();
         this.app.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -248,16 +257,16 @@ class InteractionHandler {
             child.type === 'Group' && child.children.some(c => c.userData && c.userData.gridPos && !c.userData.isGroundPlane)
         );
         const blockIntersects = blockGroup ? 
-            this.app.raycaster.intersectObjects(blockGroup.children, true) : [];
+            this.app.raycaster.intersectObjects(blockGroup.children, true) : [];  // ! 递归检测
         
         if (blockIntersects.length > 0) {
             for (let intersect of blockIntersects) {
                 const block = intersect.object;
                 if (block.userData && block.userData.gridPos) {
-                    const intersectPoint = intersect.point;
-                    const blockPos = block.position;
+                    const intersectPoint = intersect.point;  //  射线交点
+                    const blockPos = block.position;  //  方块中心
                     
-                    const tolerance = 0.5;
+                    const tolerance = 0.5;  //  容差范围
                     if (Math.abs(intersectPoint.x - blockPos.x) <= tolerance &&
                         Math.abs(intersectPoint.y - blockPos.y) <= tolerance &&
                         Math.abs(intersectPoint.z - blockPos.z) <= tolerance) {
@@ -277,7 +286,9 @@ class InteractionHandler {
             this.app.raycaster.intersectObjects(placeholderGroup.children, false) : [];
         
         if (planeIntersects.length > 0) {
+            //  获取射线与底面的交点
             const intersectPoint = planeIntersects[0].point;
+            //  世界坐标转换成网格坐标
             const half = this.app.workspaceSize / 2;
             const gridX = Math.round(intersectPoint.x + half - 0.5);
             const gridZ = Math.round(intersectPoint.z + half - 0.5);

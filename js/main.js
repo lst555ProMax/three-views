@@ -35,6 +35,7 @@ class ThreeViewsApp {
         this.interactionHandler = new InteractionHandler(this);
         this.historyManager = new HistoryManager(this);
         this.levelManager = new LevelManager(this);
+        this.uiManager = new UIManager(this);
         
         this.init();
     }
@@ -46,12 +47,9 @@ class ThreeViewsApp {
         this.sceneManager.addToAllScenes();
         this.interactionHandler.setupControls();
         this.sceneManager.animate();
-        // 初始化视图标签和按钮状态
+        // 初始化UI
         setTimeout(() => {
-            this.updateViewLabel('front', 'front');
-            this.updateViewLabel('side', 'right');
-            this.updateViewLabel('top', 'top');
-            this.updateModeButtons('free');
+            this.uiManager.initializeUI();
         }, 100);
     }
 
@@ -76,9 +74,9 @@ class ThreeViewsApp {
         this.workspaceBuilder.buildAll();
         this.sceneManager.addToAllScenes();
         // 更新视图标签
-        this.updateViewLabel('front', 'front');
-        this.updateViewLabel('side', 'right');
-        this.updateViewLabel('top', 'top');
+        this.uiManager.updateViewLabel('front', 'front');
+        this.uiManager.updateViewLabel('side', 'right');
+        this.uiManager.updateViewLabel('top', 'top');
     }
 
     // 代理方法，保持向后兼容
@@ -97,34 +95,17 @@ class ThreeViewsApp {
 
     setFreeMode() {
         this.clearWorkspace();
-        this.updateModeButtons('free');
-        // 更新自由模式下的视图标签
-        this.updateViewLabel('front', 'front', false);
-        this.updateViewLabel('side', 'right', false);
-        this.updateViewLabel('top', 'top', false);
+        this.uiManager.updateModeButtons('free');
+        this.uiManager.updateViewLabelsForMode(false);
     }
 
     setLevelMode() {
         this.levelManager.generateLevel();
-        this.updateModeButtons('level');
-        // 更新关卡模式下的视图标签
-        this.updateViewLabel('front', 'front', true);
-        this.updateViewLabel('side', 'right', true);
-        this.updateViewLabel('top', 'top', true);
+        this.uiManager.updateModeButtons('level');
+        this.uiManager.updateViewLabelsForMode(true);
     }
 
-    updateModeButtons(activeMode) {
-        const freeBtn = document.getElementById('free-mode-btn');
-        const levelBtn = document.getElementById('level-mode-btn');
-        
-        if (activeMode === 'free') {
-            freeBtn.style.background = '#007cba';
-            levelBtn.style.background = '#ccc';
-        } else {
-            freeBtn.style.background = '#ccc';
-            levelBtn.style.background = '#28a745';
-        }
-    }
+
 
     toggleOrthographicView(viewName) {
         const toggleMap = {
@@ -141,23 +122,11 @@ class ThreeViewsApp {
         if (toggle) {
             this.orthographicViews[viewName] = toggle.next;
             this.cameraManager.updateOrthographicView(viewName, toggle.next);
-            this.updateViewLabel(viewName, toggle.next);
+            this.uiManager.updateViewLabel(viewName, toggle.next);
         }
     }
 
-    updateViewLabel(viewName, direction, isLevelMode = false) {
-        const labels = {
-            front: '正视图', back: '背视图',
-            right: '右视图', left: '左视图', 
-            top: '俯视图', bottom: '仰视图'
-        };
-        const container = document.getElementById(`${viewName}-view`);
-        const label = container ? container.querySelector('.view-label') : null;
-        if (label) {
-            const suffix = isLevelMode ? '' : ' - 右键切换';
-            label.textContent = `${labels[direction]}${suffix}`;
-        }
-    }
+
 }
 
 // 全局应用实例
